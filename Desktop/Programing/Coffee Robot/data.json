@@ -1,0 +1,23 @@
+{
+  "admin":
+    {
+      "user": "admin",
+      "pw": "admin",
+      "name": "Administrator",
+      "code": "111"
+    },
+  "user1":
+    {
+      "user": "user1",
+      "pw": "user1",
+      "name":"USER 1",
+      "code": "222"
+    },
+  "user2":
+    {
+      "user": "user2",
+      "pw": "user2",
+      "name": "USER 2",
+      "code": "333"
+    }
+}

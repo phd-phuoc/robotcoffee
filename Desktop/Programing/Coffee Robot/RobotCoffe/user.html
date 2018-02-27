@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+	<title>User-Robot Coffee</title>
+	<link rel="icon" type="text/css" href="img/icon-index.png" type="image/png" sizes="16x16">
+	<!-- Bootstrap 3.3.7 -->
+	<link rel="stylesheet" type="text/css" href="bootstrap-3.3.7/css/bootstrap-theme.min.css" async>
+	<link rel="stylesheet" type="text/css" href="bootstrap-3.3.7/css/bootstrap.min.css" async>
+	<link rel="stylesheet" type="text/css" href="css/user.css" async>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.js"></script>
+</head>
+<body>
+	<div id="order" class="modal fade" role="dialog">
+		<div class="modal-dialog">
+			<!-- Modal content-->
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">&times;</button>
+					<h4 class="modal-title">Confirm your order</h4>
+				</div>
+				<div class="modal-body">
+
+					<p><b>Please press button "Confirm" to order</b></p>
+					<div class="active" id="order-information">
+						<!-- thông tin của đơn hàng sẽ được hiển thị thông qua thẻ div ni -->
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal"> Cancel </button>
+					<button type="button" class="btn btn-primary" > Confirm </button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="container">
+		<!-- navbars-->
+		<nav class="navbar navbar-inverse navbar-fixed-top">
+			<div class="container-fluid">
+				<!-- Brand and toggle get grouped for better mobile display -->
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="glyphicon glyphicon-barcode"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="index.html"><span class="glyphicon glyphicon-home"></span> Home </a>
+				</div>
+
+				<!-- Collect the nav links, forms, and other content for toggling -->
+				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+					<ul class="nav navbar-nav">
+						<li><a href="#"><span class="glyphicon glyphicon-earphone"></span> Contact <span class="sr-only">(current)</span></a></li>
+						<li><a href="#"><span class="glyphicon glyphicon-euro"></span> Donate </a></li>
+
+					</ul>
+					<!-- login area -->
+					<ul class="nav navbar-nav navbar-right">
+						<form class="navbar-form navbar-right" method="get">
+							<li class="dropdown">
+								<button type="button" class="btn-primary btn-md dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-user"></span> Account <span class="caret"></span></button>
+								<ul class="dropdown-menu">
+									<li><a href="#"><span class="glyphicon glyphicon-book"></span> Order history </a></li>
+									<li><a href="#"> <span class="glyphicon glyphicon-eye-close"></span>Change password</a></li>
+									<li><a href="#"> <span class="glyphicon glyphicon-edit"></span>Edit account</a></li>
+									<li role="separator" class="divider"></li>
+									<li><a href="#"><span class="glyphicon glyphicon-pause"></span> Logout </a></li>
+
+								</ul>
+							</li>
+						</form>
+					</ul>
+				</div><!-- /.navbar-collapse -->
+			</div>
+		</nav> <!-- navbars-->
+		<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" id="body-user">
+			<br><br><br>
+			<div class="row">
+				<!-- map -->
+				<div class="body-map hidden-xs col-sm-10 col-md-10 col-lg-10">
+					<div class="map-title">
+						<h3><b>MAP for ROOM</b> <h3 id="map-name"></h3> </h3>
+
+					</div>
+					<div class="map-display">
+						<div class="hidden-xs col-sm-12 col-md-12 col-lg-12">
+
+						</div>
+					</div>
+				</div> <!-- map -->
+				<!-- order list -->
+				<div class="body-order col-xs-12 col-sm-2 col-md-2 col-lg-2">
+					<div class="row">
+						<div class="order-menu col-xs-12 col-sm-12 col-md-12 col-lg-12">
+							<table class="table table-hover">
+								<thead>
+										<tr class="menu-font"><th colspan="4"><h3><center>MENU</center></h3></th></tr>
+									<tr>
+										<th>No.</th>
+										<th>Name</th>
+										<th>Adjust</th>
+										<th>Quantity</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td><b>1</b></td>
+										<td><span class="badge">BLACK COFFEE</span></td>
+										<td>
+											<button type="button" class="btn btn-default"><span class="glyphicon glyphicon-arrow-up"></span></button>
+											<button type="button" class="btn btn-default"><span class="glyphicon glyphicon-arrow-down"></span></button>
+										</td>
+										<td><span class="badge order-1">0</span></td>
+									</tr>
+									<tr>
+										<td><b>2</b></td>
+										<td><span class="badge">MILK COFFEE</span></td>
+										<td>
+											<button type="button" class="btn btn-default" data-dismiss="modal"><span class="glyphicon glyphicon-arrow-up"></span></button>
+											<button type="button" class="btn btn-default"><span class="glyphicon glyphicon-arrow-down"></span></button>
+										</td>
+										<td><span class="badge order-2">0</span></td>
+									</tr>
+									<tr>
+										<td colspan="" rowspan="" headers=""></td>
+										<td colspan="2">
+											<center><button type="button" class="btn btn-primary btn-md btn-block" data-toggle="modal" data-target="#order">ORDER</button></center>
+										</td>
+										<td colspan="" rowspan="" headers=""></td>
+
+									</tr>
+								</tbody>
+							</table>
+						</div>
+
+					</div>
+				</div> <!-- order-list -->
+			</div>
+		</div> <!-- intro-slide-->
+	</div> <!--background container-->
+	<!-- javascript -->
+	<script src="js/index.js" type="text/javascript" charset="utf-8"  ></script>
+	<script src="js/jquery.js" type="text/javascript" charset="utf-8"  ></script>
+	<script src="js/jquery.min.js" type="text/javascript" charset="utf-8" ></script>
+	<script src="js/jquery-3.2.1.slim.js" type="text/javascript" charset="utf-8" ></script>
+
+	<!-- jquery -->
+	<script src="bootstrap-3.3.7/js/bootstrap.min.js" type="text/javascript" charset="utf-8" ></script>
+	<script src="bootstrap-3.3.7/js/carousel.js" type="text/javascript" charset="utf-8" ></script>
+	<!-- <script src="bootstrap-3.3.7/js/modal.js" type="text/javascript" charset="utf-8" ></script> -->
+	<script src="bootstrap-3.3.7/js/button.js" type="text/javascript" charset="utf-8" ></script>
+	<script src="user.js" type="text/javascript"></script>
+</body>
+</html>
