@@ -8,8 +8,14 @@ document.getElementById("login-btn").addEventListener("click",function(req,res) 
   socket.emit('login',{"user":user, "pw":pw});
 });
 
-socket.on('logged-in',function (user) {
+socket.on('user-logged-in',function (user) {
   var url = "http://localhost:3000/user.html"+"?code="+user.code;
+  window.location.href = url;
+  console.log(url);
+});
+
+socket.on('admin-logged-in',function (user) {
+  var url = "http://localhost:3000/admin.html"+"?code="+user.code;
   window.location.href = url;
   console.log(url);
 });

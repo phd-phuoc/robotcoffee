@@ -27,7 +27,7 @@
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal"> Cancel </button>
-					<button type="button" class="btn btn-primary" > Confirm </button>
+					<button type="button" class="btn btn-primary" id="btn-confirm" > Confirm </button>
 				</div>
 			</div>
 		</div>
@@ -107,10 +107,10 @@
 										<td><b>1</b></td>
 										<td><span class="badge">BLACK COFFEE</span></td>
 										<td>
-											<button type="button" class="btn btn-default"><span class="glyphicon glyphicon-arrow-up"></span></button>
-											<button type="button" class="btn btn-default"><span class="glyphicon glyphicon-arrow-down"></span></button>
+											<button type="button" class="btn btn-default" id="black-up"><span class="glyphicon glyphicon-arrow-up"></span></button>
+											<button type="button" class="btn btn-default" id="black-down"><span class="glyphicon glyphicon-arrow-down"></span></button>
 										</td>
-										<td><span class="badge order-1">0</span></td>
+										<td><span class="badge order-1" id="black-no">0</span></td>
 									</tr>
 									<tr>
 										<td><b>2</b></td>
@@ -124,7 +124,7 @@
 									<tr>
 										<td colspan="" rowspan="" headers=""></td>
 										<td colspan="2">
-											<center><button type="button" class="btn btn-primary btn-md btn-block" data-toggle="modal" data-target="#order">ORDER</button></center>
+											<center><button type="button" id ="btn-order" class="btn btn-primary btn-md btn-block" data-toggle="modal" data-target="#order">ORDER</button></center>
 										</td>
 										<td colspan="" rowspan="" headers=""></td>
 
