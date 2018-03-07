@@ -5,6 +5,13 @@ var Users;
 var Options;
 var users_panel = document.getElementsByName("name")[0];
 var editting_user;
+function setup() {
+  var canvas1 = createCanvas(900,400);
+  background(51);
+  canvas1.parent('rooms');
+
+}
+
 
 var code = getQueryVariable("code");
 socket.emit("get-user-by-code",code);

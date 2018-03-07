@@ -9,6 +9,9 @@
 
 	<link rel="stylesheet" type="text/css" href="css/admin.css">
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.js"></script>
+	<script src="libraries/p5.js" type="text/javascript"></script>
+  <script src="libraries/p5.dom.js" type="text/javascript"></script>
+  <script src="libraries/p5.sound.js" type="text/javascript"></script>
 	<!-- font -->
 </head>
 <body>
@@ -125,7 +128,7 @@
 								</ul>
 								<div class="tab-content">
 									<div role="tabpanel" class="tab-pane active" id="order-list">
-										<div class="row-order" id="order-list-display">							
+										<div class="row-order" id="order-list-display">
 											<!-- <div class="col-xs-6 col-md-3">
 												<a href="#" class="thumbnail">
 													<div class="order-list-person">
@@ -329,10 +332,10 @@
 						</ul>
 
 						<!-- Tab panes -->
-						<div class="tab-content">
-							<div role="tabpanel" class="tab-pane" id="room-1">...</div>
-							<div role="tabpanel" class="tab-pane" id="room-2">...</div>
-							<div role="tabpanel" class="tab-pane" id="room-3">...</div>
+						<div class="tab-content" id="rooms">
+							<div role="tabpanel" class="tab-pane" id="room-1"></div>
+							<div role="tabpanel" class="tab-pane" id="room-2"></div>
+							<div role="tabpanel" class="tab-pane" id="room-3"></div>
 						</div>
 					</div>
 					<!-- end-Map content -->
