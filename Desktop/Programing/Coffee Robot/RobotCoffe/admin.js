@@ -5,13 +5,7 @@ var Users;
 var Options;
 var users_panel = document.getElementsByName("name")[0];
 var editting_user;
-function setup() {
-  var canvas1 = createCanvas(900,400);
-  background(51);
-  canvas1.parent('rooms');
-
-}
-
+var maps = 0;
 
 var code = getQueryVariable("code");
 socket.emit("get-user-by-code",code);
@@ -19,6 +13,7 @@ socket.emit("get-user-by-code",code);
 socket.on('user-info',function (info) {
   alert(info.name);
   socket.emit('req-users',0);
+  socket.emit("req-map",0);
 });
 
 socket.on('can-not-verify',function () {
@@ -55,6 +50,10 @@ socket.on('send-users',function(users){
     socket.emit('get-order-list',0);
   },1000);
 
+});
+
+socket.on('send-map',function(_map) {
+  maps = _map;
 });
 
 socket.on('send-order-list',function (list) {
@@ -136,9 +135,61 @@ document.getElementById('remove').addEventListener("click",function(){
 });
 
 ///////////////////////////////////////////////////////////////////////
+var flag = 0;
+function setup() {
+  var width = 900;
+  var height= 400;
+  var canvas1 = createCanvas(width,height);
+  background(51);
+  canvas1.parent('rooms');
 
+}
+
+function draw(){
+  if(maps !=0 && flag==0){
+    flag=1;
+    stroke(255, 204, 255);
+    strokeWeight(4);
+    drawmap(maps.S,'S',width/2,height,0);
+  }
+}
 
 ///////////////////////////////////////////////////////////////////////
+
+//0: len 1:trai 2:xuong 3:phai
+function drawmap(curpos,way,x1,y1,dir) {
+  var x2,y2;
+  if (curpos.F !=null){
+    if (dir==0) {x2 = x1; y2 = y1-curpos.F;}
+    if (dir==1) {x2 = x1-curpos.F; y2 = y1;}
+    if (dir==2) {x2 = x1; y2 = y1+curpos.F;}
+    if (dir==3) {x2 = x1+curpos.F; y2 = y1;}
+    line(x1,y1,x2,y2);
+    if (curpos.L!=null) {
+      if (dir==0) drawmap(curpos.L,way+'L',x2,y2,1);
+      if (dir==1) drawmap(curpos.L,way+'L',x2,y2,2);
+      if (dir==2) drawmap(curpos.L,way+'L',x2,y2,3);
+      if (dir==3) drawmap(curpos.L,way+'L',x2,y2,0);
+    }
+    if (curpos.R!=null) {
+      if (dir==0) drawmap(curpos.R,way+'R',x2,y2,3);
+      if (dir==1) drawmap(curpos.R,way+'R',x2,y2,0);
+      if (dir==2) drawmap(curpos.R,way+'R',x2,y2,1);
+      if (dir==3) drawmap(curpos.R,way+'R',x2,y2,2);
+    }
+    if (curpos.S!=null) {
+      if (dir==0) drawmap(curpos.S,way+'S',x2,y2,0);
+      if (dir==1) drawmap(curpos.S,way+'S',x2,y2,1);
+      if (dir==2) drawmap(curpos.S,way+'S',x2,y2,2);
+      if (dir==3) drawmap(curpos.S,way+'S',x2,y2,3);
+    }
+    if (curpos.L==null && curpos.R==null && curpos.S==null){
+      //console.log(way+curpos.F);
+    }
+  }
+}
+
+
 //http://www.example.com/index.php?id=1&image=awesome.jpg
 function getQueryVariable(variable)
 {
