@@ -13,13 +13,15 @@ var socket = require('socket.io');
 var io = socket(server);
 
 var fs = require('fs');
-var data = fs.readFileSync('data.json');
+var data = fs.readFileSync('users.json');
 var users = JSON.parse(data);
+var data1 = fs.readFileSync('map.json');
+var map = JSON.parse(data1);
 //console.log(users);
 
 // words.insert = 2;
 // var data = JSON.stringify(words,null,2);
-// fs.writeFile('data.json',data,function(){
+// fs.writeFile('users.json',data,function(){
 //   console.log(words);
 // });
 
@@ -68,13 +70,13 @@ io.sockets.on('connection',function (socket){
     }
     console.log(users);
     var data = JSON.stringify(users,null,2);
-    fs.writeFile('data.json',data,function(){});
+    fs.writeFile('users.json',data,function(){});
   });
 
   socket.on("change_user",function(data){
     users = data;
     data = JSON.stringify(users,null,2);
-    fs.writeFile('data.json',data,function(){});
+    fs.writeFile('users.json',data,function(){});
   });
 
   socket.on("remove-user",function(data){
@@ -82,7 +84,7 @@ io.sockets.on('connection',function (socket){
       if (users[usr].name==data){
         delete users[usr];
         data = JSON.stringify(users,null,2);
-        fs.writeFile('data.json',data,function(){});
+        fs.writeFile('users.json',data,function(){});
       }
     }
   });
@@ -97,8 +99,13 @@ io.sockets.on('connection',function (socket){
     if (order_list_change==1 || data==1){
       socket.emit('send-order-list',order_list);
       order_list_change = 0;
-      console.log("sent order list");
+      //console.log("sent order list");
     }
+  });
+
+  socket.on("req-map",function() {
+    socket.emit('send-map',map);
+    //console.log(map);
   });
 
 });
