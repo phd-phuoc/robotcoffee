@@ -332,10 +332,20 @@
 						</ul>
 
 						<!-- Tab panes -->
-						<div class="tab-content" id="rooms">
-							<div role="tabpanel" class="tab-pane" id="room-1"></div>
-							<div role="tabpanel" class="tab-pane" id="room-2"></div>
-							<div role="tabpanel" class="tab-pane" id="room-3"></div>
+						<div>
+							<div class="tab-content col-sm-10" id="rooms">
+								<div role="tabpanel" class="tab-pane" id="room-1"></div>
+								<div role="tabpanel" class="tab-pane" id="room-2"></div>
+								<div role="tabpanel" class="tab-pane" id="room-3"></div>
+							</div>
+							<div class="col-sm-2">
+								<form action="/action_page.php">
+									<select name="name" size="15">
+									</select>
+									<button type="button" class="btn btn-primary" id="set-pos"><strong>Set pos</strong></button>
+									<h4 id="alert-set-pos"></h4>
+								</form>
+							</div>
 						</div>
 					</div>
 					<!-- end-Map content -->

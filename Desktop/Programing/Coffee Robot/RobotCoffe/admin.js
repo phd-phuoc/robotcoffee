@@ -1,11 +1,22 @@
+var url = 'http://localhost:3000';
 var socket;
-socket = io.connect('http://localhost:3000');
-var url = window.location.href;
+socket = io.connect(url);
+//var url = window.location.href;
 var Users;
 var Options;
 var users_panel = document.getElementsByName("name")[0];
+var users_panel1 = document.getElementsByName("name")[1];
 var editting_user;
+
 var maps = 0;
+var pos1x = [];
+var pos1y = [];
+var pos2x = [];
+var pos2y = [];
+var dirc = [];
+
+var flag_set_pos = 0;
+var cur_pos_name = '';
 
 var code = getQueryVariable("code");
 socket.emit("get-user-by-code",code);
@@ -18,19 +29,26 @@ socket.on('user-info',function (info) {
 
 socket.on('can-not-verify',function () {
   alert("Can not log in");
-  var url = "http://localhost:3000/index.html";
-  window.location.href = url;
+  var uri = url+"/index.html";
+  window.location.href = uri;
 });
 
 socket.on('send-users',function(users){
   Users = users;
   for (i = users_panel.options.length;i>=0; i--) {
     users_panel.options[i] = null;
+    users_panel1.options[i] = null;
   }
+  var option1 = document.createElement("option");
+  option1.text = "All users";
+  users_panel1.add(option1);
   for (var usr in Users) {
     var option = document.createElement("option");
+    var option1 = document.createElement("option");
     option.text = Users[usr].name;
+    option1.text = Users[usr].name;
     users_panel.add(option);
+    users_panel1.add(option1);
   }
 
   users_panel.addEventListener("click",function(){
@@ -45,6 +63,25 @@ socket.on('send-users',function(users){
       }
     }
   });
+
+  users_panel1.addEventListener("click",function(){
+    //alert(users_panel.value);
+    if (users_panel1.value == "All users")
+      for (var usr in Users) {
+          redrawmap();
+          drawPos(Users[usr].pos);
+      }
+    else
+      for (var usr in Users) {
+        if (users_panel1.value == Users[usr].name){
+          cur_pos_name = Users[usr].name;
+          background(51);
+          redrawmap();
+          drawPos(Users[usr].pos);
+        }
+      }
+  });
+
   socket.emit('get-order-list',1);
   setInterval(function() {
     socket.emit('get-order-list',0);
@@ -77,6 +114,11 @@ socket.on('send-order-list',function (list) {
 });
 
 ///////////////////////////////////////////////////////////////////////////////
+document.getElementById('set-pos').addEventListener("click",function(){
+  document.getElementById('alert-set-pos').innerHTML="Set postiton";
+  flag_set_pos = 1;
+});
+
 
 document.getElementById('create').addEventListener("click",function(){
   var newid = document.getElementById("addid").value;
@@ -90,7 +132,8 @@ document.getElementById('create').addEventListener("click",function(){
       "user": newid,
       "pw": newpw,
       "name": newname,
-      "code": "0"
+      "code": "0",
+      "pos":""
       }
     socket.emit("add_new_user",new_user);
     alert("Added a new user");
@@ -135,7 +178,16 @@ document.getElementById('remove').addEventListener("click",function(){
 });
 
 ///////////////////////////////////////////////////////////////////////
-var flag = 0;
+var flag_map = 0;
+var flag_redraw = 0;
+var flag_pos_valid = 0;
+var delta_pos;
+var pos1x_cp=[];
+var pos1y_cp=[];
+var pos2x_cp=[];
+var pos2y_cp=[];
+var dirc_cp=[];
+
 function setup() {
   var width = 900;
   var height= 400;
@@ -146,16 +198,102 @@ function setup() {
 }
 
 function draw(){
-  if(maps !=0 && flag==0){
-    flag=1;
-    stroke(255, 204, 255);
-    strokeWeight(4);
-    drawmap(maps.S,'S',width/2,height,0);
+  if(maps !=0){
+    flag_map=1;
+    redrawmap();
+  }
+  if (flag_redraw==1){
+    background(51);
+    redrawmap();
+    flag_redraw=0;
+  }
+  if(flag_map==1){
+    getPos();
   }
 }
 
 ///////////////////////////////////////////////////////////////////////
 
+function mousePressed() {
+  if (flag_pos_valid!=0 && flag_set_pos == 1){
+    //console.log(dirc[flag_pos_valid-1]+abs(delta_pos));
+    document.getElementById('alert-set-pos').innerHTML="";
+    var strg = dirc[flag_pos_valid-1]+abs(delta_pos)
+    alert("Position for "+cur_pos_name+" is "+strg);
+    flag_pos_valid = 0;
+    flag_set_pos = 0;
+
+    var data = {
+      "name": cur_pos_name,
+      "pos": strg
+    };
+    socket.emit('set_pos',data);
+  }
+}
+
+function drawPos(pos){
+  var max_length = 0;
+  var max_length_id = 0;
+  for (var i = 0;i<dirc.length;i++){
+    var same = pos.match(dirc[i]);
+    if (same !=null)
+      if (same.length>max_length) {
+      max_length_id = i;
+      }
+  }
+  var strg = dirc[max_length_id];
+  var dis = pos.substr(strg.length,pos.length);
+  stroke(200, 100, 200);
+  strokeWeight(10);
+  var x,y = 0;
+  if (strg.charAt(strg.length-1)=='S') { x=pos1x[max_length_id];y=pos1y[max_length_id]-dis;}
+  if (strg.charAt(strg.length-1)=='R') { x=pos1x[max_length_id]-(-dis);y=pos1y[max_length_id];}
+  if (strg.charAt(strg.length-1)=='L') { x=pos1x[max_length_id]-dis,y=pos1y[max_length_id];}
+  point(x,y);
+  console.log(x+" "+y);
+
+}
+
+function getPos(){
+  for (var i = 0;i<pos1x.length;i++){
+    if (pos1y[i] == pos2y[i])
+      if (((mouseX>pos1x[i] && mouseX<pos2x[i])||
+          (mouseX<pos1x[i] && mouseX>pos2x[i]))&&
+          mouseY-pos1y[i]<5 && mouseY-pos1y[i]> -5){
+            stroke(255, 255, 255);
+            strokeWeight(10);
+            point(mouseX,pos1y[i]);
+            flag_redraw = 1;
+            flag_pos_valid = i+1;
+            delta_pos = -Math.round(abs(mouseX-pos1x[i]));
+          }
+    if (pos1x[i] == pos2x[i])
+      if (mouseY<pos1y[i] && mouseY>pos2y[i] &&
+          mouseX-pos1x[i]<5 && mouseX-pos1x[i]> -5){
+            stroke(255, 255, 255);
+            strokeWeight(10);
+            point(pos1x[i],mouseY);
+            flag_redraw = 1;
+            flag_pos_valid = i+1;
+            delta_pos = Math.round(abs(mouseY-pos1y[i]));
+          }
+  }
+}
+function redrawmap(){
+  stroke(255, 204, 255);
+  strokeWeight(4);
+  pos1x_cp=[];
+  pos1y_cp=[];
+  pos2x_cp=[];
+  pos2y_cp=[];
+  dirc_cp=[];
+  drawmap(maps.S,'S',width/2,height,0);
+  pos1x = pos1x_cp;
+  pos1y = pos1y_cp;
+  pos2x = pos2x_cp;
+  pos2y = pos2y_cp;
+  dirc = dirc_cp;
+}
 //0: len 1:trai 2:xuong 3:phai
 function drawmap(curpos,way,x1,y1,dir) {
   var x2,y2;
@@ -164,6 +302,9 @@ function drawmap(curpos,way,x1,y1,dir) {
     if (dir==1) {x2 = x1-curpos.F; y2 = y1;}
     if (dir==2) {x2 = x1; y2 = y1+curpos.F;}
     if (dir==3) {x2 = x1+curpos.F; y2 = y1;}
+    pos1x_cp.push(x1); pos1y_cp.push(y1);
+    pos2x_cp.push(x2); pos2y_cp.push(y2);
+    dirc_cp.push(way);
     line(x1,y1,x2,y2);
     if (curpos.L!=null) {
       if (dir==0) drawmap(curpos.L,way+'L',x2,y2,1);

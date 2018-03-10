@@ -1,5 +1,6 @@
+var url = 'http://localhost:3000';
 var socket;
-socket = io.connect('http://localhost:3000');
+socket = io.connect(url);
 var url = window.location.href;
 var black_no = 0;
 var user;
@@ -14,8 +15,8 @@ socket.on('user-info',function (info) {
 
 socket.on('can-not-verify',function () {
   alert("Can not log in");
-  var url = "http://localhost:3000/index.html";
-  window.location.href = url;
+  var uri = url+"/index.html";
+  window.location.href = uri;
 });
 ///////////////////////////////////////////////////
 document.getElementById("black-up").addEventListener("click",function() {

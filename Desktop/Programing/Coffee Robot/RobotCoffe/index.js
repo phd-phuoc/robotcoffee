@@ -1,5 +1,6 @@
+var url = 'http://localhost:3000';
 var socket;
-socket = io.connect('http://localhost:3000');
+socket = io.connect(url);
 
 
 document.getElementById("login-btn").addEventListener("click",function(req,res) {
@@ -9,15 +10,15 @@ document.getElementById("login-btn").addEventListener("click",function(req,res) 
 });
 
 socket.on('user-logged-in',function (user) {
-  var url = "http://localhost:3000/user.html"+"?code="+user.code;
-  window.location.href = url;
-  console.log(url);
+  var uri = url+"/user.html"+"?code="+user.code;
+  window.location.href = uri;
+  console.log(uri);
 });
 
 socket.on('admin-logged-in',function (user) {
-  var url = "http://localhost:3000/admin.html"+"?code="+user.code;
-  window.location.href = url;
-  console.log(url);
+  var uri = url+"/admin.html"+"?code="+user.code;
+  window.location.href = uri;
+  console.log(uri);
 });
 
 socket.on('log-in-failed',function () {
