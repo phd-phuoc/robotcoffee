@@ -1,3 +1,4 @@
+//var exec = require(child_process);
 var express = require('express');
 var app = express();
 var server = app.listen(3000);
@@ -108,9 +109,27 @@ io.sockets.on('connection',function (socket){
     //console.log(map);
   });
 
+  socket.on('set_pos',function(Pos) {
+    for (var usr in users){
+      if (users[usr].name==Pos.name){
+        users[usr].pos=Pos.pos;
+        //console.log(users[usr].name+users[usr].pos);
+        data = JSON.stringify(users,null,2);
+        fs.writeFile('users.json',data,function(){});
+      }
+    }
+  });
+
 });
 
 ///////////////////////////////////////////////////////
+function sendMessage(message) {
+  exec.execFile('./remote',
+                ['-m',message],
+                function(error,stdout,stderr) {
+                });
+}
+
 function rndStr() {
     x=Math.random().toString(36).substring(7).substr(0,8);
     while (x.length!=8){

@@ -3,24 +3,28 @@
     "user": "admin",
     "pw": "admin",
     "name": "Administrator",
-    "code": "vit97onv"
+    "code": "1tzqoqyc",
+    "pos": "SLRR23"
   },
   "user1": {
     "user": "user1",
     "pw": "user1",
     "name": "USER 1",
-    "code": "0"
+    "code": "0",
+    "pos": "SSS21"
   },
   "user3": {
     "user": "user3",
     "pw": "user3",
     "name": "USER 3",
-    "code": "0"
+    "code": "0",
+    "pos": "SR45"
   },
   "user2": {
     "user": "user2",
     "pw": "user2",
     "name": "USER 2",
-    "code": "0"
+    "code": "0",
+    "pos": "SRLS40"
   }
 }
