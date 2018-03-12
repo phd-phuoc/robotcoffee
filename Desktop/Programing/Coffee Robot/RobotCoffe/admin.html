@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+	<title>Admin-Robot Coffee</title>
+	<link rel="icon" type="text/css" href="img/icon-index.png" type="image/png" sizes="16x16">
+	<!-- Bootstrap 3.3.7 -->
+	<link rel="stylesheet" type="text/css" href="bootstrap-3.3.7/css/bootstrap-theme.min.css" async>
+	<link rel="stylesheet" type="text/css" href="bootstrap-3.3.7/css/bootstrap.min.css" async>
+
+	<link rel="stylesheet" type="text/css" href="css/admin.css">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.js"></script>
+	<script src="libraries/p5.js" type="text/javascript"></script>
+  <script src="libraries/p5.dom.js" type="text/javascript"></script>
+  <script src="libraries/p5.sound.js" type="text/javascript"></script>
+	<!-- font -->
+</head>
+<body>
+
+	<div class="container">
+		<!-- navbars-->
+		<nav class="navbar navbar-inverse navbar-fixed-top">
+			<div class="container-fluid">
+				<!-- Brand and toggle get grouped for better mobile display -->
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="glyphicon glyphicon-barcode"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand col-xs-12 hidden-sm hidden-md hidden-lg " >
+						<span><img src="img/icon-robot-welcome.jpg" alt="" style="height:36px; width: 36px;"></span>
+						Administrator
+					</a>
+					<!-- <li role="presentation" class="active"><a class="navbar-brand" href="#admin" aria-controls="admin" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-king"></span> Admin </a></li> -->
+				</div>
+
+				<!-- Collect the nav links, forms, and other content for toggling -->
+				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+					<ul class="nav navbar-nav">
+						<li role="presentation"><a class="active" href="#admin" aria-controls="admin" role="tab" data-toggle="tab"><span><img src="img/icon-admin.png" alt="" style="height:24px; width: 24px;"></span> Admin </a></li>
+						<li role="presentation"><a href="#user" aria-controls="user" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-user"></span> User </a></li>
+						<li role="presentation"><a href="#map" aria-controls="map" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-th"></span> Map </a></li>
+						<li role="presentation"><a href="#menu" aria-controls="menu" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-menu-hamburger"></span> Menu </a></li>
+
+					</ul>
+					<!-- login area -->
+					<ul class="nav navbar-nav navbar-right">
+						<form class="navbar-form navbar-right" method="get">
+							<li class="dropdown">
+								<button type="button" class="btn-primary btn-md dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-user"></span> Account <span class="caret"></span></button>
+								<ul class="dropdown-menu">
+									<li><a href="#"><span class="glyphicon glyphicon-book"></span> Profile </a></li>
+									<li><a href="#"> <span class="glyphicon glyphicon-eye-close"></span>Change password</a></li>
+									<!-- <li><a href="#"> <span class="glyphicon glyphicon-edit"></span></a></li> -->
+									<li role="separator" class="divider"></li>
+									<li><a href="index.html"><span class="glyphicon glyphicon-pause"></span> Logout </a></li>
+
+								</ul>
+							</li>
+						</form>
+					</ul>
+				</div><!-- /.navbar-collapse -->
+			</div>
+		</nav> <!-- navbars-->
+		<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" >
+			<br> <br> <br>
+			<div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+				<br> <br> <br>
+			</div>
+			<div>
+				<!-- Tab panes -->
+				<div class="tab-content">
+					<!-- Admin content -->
+					<div role="tabpanel" class="tab-pane active" id="admin">
+						<div class="row">
+							<div class="admin-robot-status col-xs-12 col-sm-3 col-md-3 col-lg-3">
+								<table class="table-hover table-responsive">
+
+									<thead>
+										<tr>
+											<th colspan="3" rowspan="2">
+												<center><h3><span class="label label-default">Robot Status</span></h3></center>
+											</th>
+
+										</tr>
+									</thead>
+
+									<tbody class="table-bordered">
+										<tr>
+											<th><code>MODEL</code></th>
+											<center><td colspan="2" id="model">001</td></center>
+										</tr>
+										<tr>
+											<th><code>BATTERY(%)</code></th>
+											<center><td colspan="2" id="battery">99%</td></center>
+										</tr>
+										<tr>
+											<th><code>POSITION(table)</code></th>
+											<center><td colspan="2" id="position">4</td></center>
+										</tr>
+										<tr>
+											<th><code>WORK?(y/n)</code></th>
+											<center><td colspan="2" id="work">yes</td></center>
+										</tr>
+										<tr>
+											<th><code>REMAIN(cup)</code></th>
+											<center><td colspan="2" id="remain">2</td></center>
+										</tr>
+										<tr>
+											<th><code>Start at</code></th>
+											<center><td colspan="2" id="time-start">10:00am</td></center>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+							<div class="admin-other col-xs-12 col-sm-9 col-md-9 col-lg-9">
+								<ul class="nav nav-tabs" role="tablist">
+									<li role="presentation" class="active">
+										<a class="navbar-inverse" href="#order-list" aria-controls="order-list" role="tab" data-toggle="tab">Order list</a>
+									</li>
+									<li role="presentation">
+										<a class="navbar-inverse" href="#history" aria-controls="history-errors" role="tab" data-toggle="tab">History</a>
+									</li>
+									<li role="presentation">
+										<a class="navbar-inverse" href="#message" aria-controls="message" role="tab" data-toggle="tab">Message</a>
+									</li>
+								</ul>
+								<div class="tab-content">
+									<div role="tabpanel" class="tab-pane active" id="order-list">
+										<div class="row-order" id="order-list-display">
+											<!-- <div class="col-xs-6 col-md-3">
+												<a href="#" class="thumbnail">
+													<div class="order-list-person">
+														<h5><strong>Name: </strong></h5>
+														<h5><strong>ID: </strong></h5>
+														<h5><strong>Position: </strong></h5>
+														<h5><strong>Order: </strong></h5>
+														<h5><strong>Done? </strong></h5>
+														<span><button type="button" id="btn-order-list-remove-1" class="btn btn-default"><span class="glyphicon glyphicon-remove"></span></button></span>
+														<span><button type="button" id="btn-order-list-ok-1" class="btn btn-default"><span class="glyphicon glyphicon-ok"></span></button></span>
+													</div>
+												</a>
+											</div> -->
+										</div>
+									</div>
+									<div role="tabpanel" class="tab-pane" id="history">
+										<div class="row">
+											<div class="hidden-xs col-sm-2 col-md-3 col-lg-3">
+
+											</div>
+											<div class="history-info col-xs-12 col-sm-7 col-md-5 col-lg-5">
+												<div class="navbar-inverse">
+													<center><p style="font-family: patrick; font-size: 20px; color: blue;">Working History of Robot</p></center>
+												</div>
+												<div style="padding: 4px;">
+													<h5 class="bg-danger"><strong>Robot had errors at 5pm in room 3</strong></h5>
+													<h5 class="bg-info"><strong>Robot had arrived table 2 at 3:30pm at room 2</strong></h5>
+													<h5 class="bg-info"><strong>Robot had arrived table 4 at 1:30pm at room 2</strong></h5>
+													<h5 class="bg-info"><strong>Robot had arrived table 6 at 8am at room 4</strong></h5>
+													<h5 class="bg-danger"><strong>Robot had errors at 6am in room 3 </strong></h5>
+													<h5 class="bg-danger"><strong>Robot had errors at 5pm in room 3</strong></h5>
+													<h5 class="bg-info"><strong>Robot had arrived table 2 at 3:30pm at room 2</strong></h5>
+													<h5 class="bg-info"><strong>Robot had arrived table 4 at 1:30pm at room 2</strong></h5>
+													<h5 class="bg-info"><strong>Robot had arrived table 6 at 8am at room 4</strong></h5>
+													<h5 class="bg-danger"><strong>Robot had errors at 6am in room 3 </strong></h5>
+												</div>
+											</div>
+											<div class="hidden-xs col-sm-3 col-md-4 col-lg-4">
+
+											</div>
+										</div>
+									</div>
+									<div role="tabpanel" class="tab-pane" id="message">...</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<!-- end-Admin content -->
+					<!-- User content -->
+					<div role="tabpanel" class="tab-pane" id="user">
+						<div class="tab-user row">
+							<div class="col-xs-12 col-sm-3 col-md-3 col-lg-3">
+								<button type="button" class="btn btn-outline-primary"><span class="glyphicon glyphicon-zoom-in"></span></button>
+								<span class="form-group">
+									<input type="form-control" name="search" placeholder="Searching user by name"></input>
+								</span>
+								<form action="/action_page.php">
+									<select name="name" size="15">
+									</select>
+
+								</form>
+							</div>
+							<div class="col-xs-12 col-sm-9 col-md-9 col-lg-9">
+								<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+									<div class="panel panel-default">
+										<div class="panel-heading" role="tab" id="headingOne">
+											<h4 class="panel-title">
+												<a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+													<span style="font-family: cabin_bold; font-size: 20px;"><span class="glyphicon glyphicon-user"></span> Add-Account</span>
+												</a>
+											</h4>
+										</div>
+										<div id="collapseOne" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne">
+											<div class="panel-body row">
+												<div class="add-image col-xs-3 col-sm-3 col-md-3 col-lg-3">
+													<img class="img-rounded img-responsive" src="img/icon-index.png" alt="">
+												</div>
+												<div class="add-image col-xs-9 col-sm-9 col-md-9 col-lg-9">
+
+													<form class="form-horizontal">
+														<div class="form-group">
+															<label class="control-label col-sm-2" for="name">Name:</label>
+															<div class="col-sm-10">
+																<input type="name" class="form-control" id="addname" placeholder="Ex:Tran Hoang Loc">
+															</div>
+														</div>
+														<div class="form-group">
+															<label class="control-label col-sm-2" for="id">ID:</label>
+															<div class="col-sm-10">
+																<input type="id" class="form-control" id="addid" placeholder="EX: hoanglocdn95">
+															</div>
+														</div>
+														<div class="form-group">
+															<label class="control-label col-sm-2" for="pwd">Password:</label>
+															<div class="col-sm-10">
+																<input type="password" class="form-control" id="addpwd" placeholder="********">
+															</div>
+														</div>
+														<div class="form-group">
+															<div class="col-sm-offset-2 col-sm-10">
+																<div class="checkbox">
+																	<label><input type="checkbox">is VIP?</label>
+																</div>
+															</div>
+														</div>
+
+														<br>
+														<div>
+															<div class="col-sm-offset-2 col-sm-10">
+																<button type="button" class="btn btn-primary" id="create"><strong>Create</strong></button>
+																<button type="reset" class="btn btn-primary"><strong>Reset</strong></button>
+															</div>
+														</div>
+													</form>
+
+												</div>
+											</div>
+										</div>
+									</div>
+									<div class="panel panel-default">
+										<div class="panel-heading" role="tab" id="headingTwo">
+											<h4 class="panel-title">
+												<a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+													<span style="font-family: cabin_bold; font-size: 20px;"><span class="glyphicon glyphicon-edit"></span> Edit-Account</span>
+												</a>
+											</h4>
+										</div>
+										<div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
+											<div class="panel-body">
+
+												<div class="add-image col-xs-3 col-sm-3 col-md-3 col-lg-3">
+													<img class="img-rounded img-responsive" src="img/icon-index.png" alt="">
+												</div>
+												<div class="add-image col-xs-9 col-sm-9 col-md-9 col-lg-9">
+
+													<form class="form-horizontal">
+														<div class="form-group">
+															<label class="control-label col-sm-2" for="name">Name:</label>
+															<div class="col-sm-10">
+																<input type="name" class="form-control" id="name" value="Name">
+															</div>
+														</div>
+
+														<div class="form-group">
+															<label class="control-label col-sm-2" for="id">ID:</label>
+															<div class="col-sm-10">
+																<input type="id" class="form-control" id="id" value="user">
+															</div>
+														</div>
+														<div class="form-group">
+															<label class="control-label col-sm-2" for="pwd">Password:</label>
+															<div class="col-sm-10">
+																<input type="text" class="form-control" id="pwd" value="password">
+															</div>
+														</div>
+
+														<br>
+														<div class="form-group">
+															<div class="col-sm-offset-2 col-sm-10">
+																<button type="button" class="btn btn-success" id="save"><strong>Save</strong></button>
+																<button type="reset" class="btn btn-primary"><strong>Reset</strong></button>
+															</div>
+														</div>
+													</form>
+
+												</div>
+
+											</div>
+										</div>
+									</div>
+									<div class="panel panel-default">
+										<div class="panel-heading" role="tab" id="headingThree">
+											<h4 class="panel-title">
+												<a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+													<span style="font-family: cabin_bold; font-size: 20px;"><span class="glyphicon glyphicon-cog"></span> Remove </span>
+												</a>
+											</h4>
+										</div>
+										<div id="collapseThree" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
+											<div class="panel-body">
+												<div class="form-group">
+													<div class="col-sm-offset-2 col-sm-10">
+														<button type="button" class="btn btn-danger" id="remove"><span class="glyphicon glyphicon-remove"></span><strong>Remove</strong></button>
+														<button type="reset" class="btn btn-warning"><span class="glyphicon glyphicon-lock"></span><strong>Lock (temporary)</strong></button>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<!-- end-User content -->
+					<!-- Map content -->
+					<div role="tabpanel" class="tab-pane" id="map">
+						<ul class="nav nav-tabs" role="tablist">
+							<li role="presentation" class="active"><a href="#room-1" aria-controls="room-1" role="tab" data-toggle="tab"> Room 1</a></li>
+							<li role="presentation"><a href="#room-2" aria-controls="room-2" role="tab" data-toggle="tab"> Room 2</a></li>
+							<li role="presentation"><a href="#room-3" aria-controls="room-3" role="tab" data-toggle="tab"> Room3</a></li>
+						</ul>
+
+						<!-- Tab panes -->
+						<div>
+							<div class="tab-content col-sm-10" id="rooms">
+								<div role="tabpanel" class="tab-pane" id="room-1"></div>
+								<div role="tabpanel" class="tab-pane" id="room-2"></div>
+								<div role="tabpanel" class="tab-pane" id="room-3"></div>
+							</div>
+							<div class="col-sm-2">
+								<form action="/action_page.php">
+									<select name="name" size="15">
+									</select>
+									<button type="button" class="btn btn-primary" id="set-pos"><strong>Set pos</strong></button>
+									<h4 id="alert-set-pos"></h4>
+								</form>
+							</div>
+						</div>
+					</div>
+					<!-- end-Map content -->
+					<!-- Menu content -->
+					<div role="tabpanel" class="tab-pane" id="menu">
+						<div class="row bg-success">
+							<div class="bg-primary form-inline col-xs-12 col-sm-12 col-md-12 col-lg-12">
+								<input type="text" name="update-menu" id="update-menus" placeholder="input item">
+								<button type="button" class="btn btn-info">Submit</button>
+							</div>
+							<div class="bg-primary col-xs-12 col-sm-12 col-md-12 col-lg-12">
+								<span class="menu-item" ><span class="badge">MILK COFFEE</span><button type="button" class="btn btn-default" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span></button></span>
+							</div>
+						</div>
+					</div>
+					<!-- end-Menu content -->
+
+				</div>
+
+			</div>
+		</div> <!-- intro-slide-->
+	</div> <!--background container-->
+	<!-- javascript -->
+	<script src="js/index.js" type="text/javascript" charset="utf-8"  ></script>
+	<script src="js/jquery.js" type="text/javascript" charset="utf-8"  ></script>
+	<script src="js/jquery.min.js" type="text/javascript" charset="utf-8" ></script>
+	<script src="js/jquery-3.2.1.slim.js" type="text/javascript" charset="utf-8" ></script>
+
+	<!-- jquery -->
+	<script src="bootstrap-3.3.7/js/bootstrap.min.js" type="text/javascript" charset="utf-8" ></script>
+	<script src="bootstrap-3.3.7/js/tab.js" type="text/javascript" charset="utf-8" ></script>
+	<!-- <script src="bootstrap-3.3.7/js/modal.js" type="text/javascript" charset="utf-8" ></script> -->
+	<script src="bootstrap-3.3.7/js/button.js" type="text/javascript" charset="utf-8" ></script>
+	<script src="admin.js" type="text/javascript"></script>
+</body>
+</html>
