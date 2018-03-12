@@ -4,14 +4,14 @@
     "pw": "admin",
     "name": "Administrator",
     "code": "1tzqoqyc",
-    "pos": "SLRR23"
+    "pos": "SRLS40"
   },
   "user1": {
     "user": "user1",
     "pw": "user1",
     "name": "USER 1",
     "code": "0",
-    "pos": "SSS21"
+    "pos": "SLR30"
   },
   "user3": {
     "user": "user3",
@@ -25,6 +25,6 @@
     "pw": "user2",
     "name": "USER 2",
     "code": "0",
-    "pos": "SRLS40"
+    "pos": "SSS27"
   }
 }

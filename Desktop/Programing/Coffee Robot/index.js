@@ -25,6 +25,9 @@ var map = JSON.parse(data1);
 // fs.writeFile('users.json',data,function(){
 //   console.log(words);
 // });
+var direction = "SLS50";
+updateMap(direction);
+
 
 
 io.sockets.on('connection',function (socket){
@@ -123,6 +126,36 @@ io.sockets.on('connection',function (socket){
 });
 
 ///////////////////////////////////////////////////////
+function updateMap(pos){
+  var cur = 0;
+  var curPos = map;
+  var dis=0;
+  while (pos[cur]!=null){
+    if (pos[cur]=="L" || pos[cur]=="R" || pos[cur]=="S"){
+      if (!curPos.hasOwnProperty(pos[cur])){
+        curPos[pos[cur]] = {"F":0};
+        curPos = curPos[pos[cur]];
+        //console.log();
+      } else {
+        curPos = curPos[pos[cur]];
+      }
+    }
+    else {
+      var temp_dis = 1*pos.substr(cur,pos.length);
+      if (temp_dis>dis) {
+        dis = temp_dis;
+        curPos.F = dis;
+        console.log(map);
+        data1 = JSON.stringify(map,null,2);
+        fs.writeFile('map.json',data1,function(){});
+      }
+
+    }
+    cur++;
+  }
+
+}
+
 function sendMessage(message) {
   exec.execFile('./remote',
                 ['-m',message],
