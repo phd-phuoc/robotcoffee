@@ -190,7 +190,7 @@ var dirc_cp=[];
 
 function setup() {
   var width = 900;
-  var height= 400;
+  var height= 450;
   var canvas1 = createCanvas(width,height);
   background(51);
   canvas1.parent('rooms');
@@ -246,14 +246,14 @@ function drawPos(pos){
   stroke(200, 100, 200);
   strokeWeight(10);
   var x,y = 0;
-  if (strg.charAt(strg.length-1)=='S') { x=pos1x[max_length_id];y=pos1y[max_length_id]-dis;}
-  if (strg.charAt(strg.length-1)=='R') { x=pos1x[max_length_id]-(-dis);y=pos1y[max_length_id];}
-  if (strg.charAt(strg.length-1)=='L') { x=pos1x[max_length_id]-dis,y=pos1y[max_length_id];}
+  if (strg.charAt(strg.length-1)=='S') { x=pos1x[max_length_id]; y=pos1y[max_length_id]-dis;}
+  if (strg.charAt(strg.length-1)=='R') { x=pos1x[max_length_id]-(-dis); y=pos1y[max_length_id];}
+  if (strg.charAt(strg.length-1)=='L') { x=pos1x[max_length_id]-dis; y=pos1y[max_length_id];}
   point(x,y);
   console.log(x+" "+y);
 
 }
-
+//show white dot on the trace when floating over the mouse
 function getPos(){
   for (var i = 0;i<pos1x.length;i++){
     if (pos1y[i] == pos2y[i])
@@ -264,7 +264,7 @@ function getPos(){
             strokeWeight(10);
             point(mouseX,pos1y[i]);
             flag_redraw = 1;
-            flag_pos_valid = i+1;
+            if (flag_set_pos == 1) flag_pos_valid = i+1;
             delta_pos = -Math.round(abs(mouseX-pos1x[i]));
           }
     if (pos1x[i] == pos2x[i])
@@ -274,7 +274,7 @@ function getPos(){
             strokeWeight(10);
             point(pos1x[i],mouseY);
             flag_redraw = 1;
-            flag_pos_valid = i+1;
+            if (flag_set_pos == 1) flag_pos_valid = i+1;
             delta_pos = Math.round(abs(mouseY-pos1y[i]));
           }
   }
