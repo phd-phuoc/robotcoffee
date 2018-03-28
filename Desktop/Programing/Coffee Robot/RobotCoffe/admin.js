@@ -9,11 +9,14 @@ var users_panel1 = document.getElementsByName("name")[1];
 var editting_user;
 
 var maps = 0;
+var curmap;
+var curroom = 1;
 var pos1x = [];
 var pos1y = [];
 var pos2x = [];
 var pos2y = [];
 var dirc = [];
+var abs_dir = [];
 
 var flag_set_pos = 0;
 var cur_pos_name = '';
@@ -37,20 +40,12 @@ socket.on('send-users',function(users){
   Users = users;
   for (i = users_panel.options.length;i>=0; i--) {
     users_panel.options[i] = null;
-    users_panel1.options[i] = null;
   }
-  var option1 = document.createElement("option");
-  option1.text = "All users";
-  users_panel1.add(option1);
   for (var usr in Users) {
-    var option = document.createElement("option");
-    var option1 = document.createElement("option");
-    option.text = Users[usr].name;
-    option1.text = Users[usr].name;
-    users_panel.add(option);
-    users_panel1.add(option1);
+      var option = document.createElement("option");
+      option.text = Users[usr].name;
+      users_panel.add(option);
   }
-
   users_panel.addEventListener("click",function(){
     //alert(users_panel.value);
     for (var usr in Users) {
@@ -59,17 +54,18 @@ socket.on('send-users',function(users){
         document.getElementById("name").value = Users[usr].name;
         document.getElementById("id").value = Users[usr].user;
         document.getElementById("pwd").value = Users[usr].pw;
-
+        document.getElementById("room").value = Users[usr].room;
       }
     }
   });
 
   users_panel1.addEventListener("click",function(){
-    //alert(users_panel.value);
     if (users_panel1.value == "All users")
       for (var usr in Users) {
+        if (Users[usr].room == curroom){
           redrawmap();
           drawPos(Users[usr].pos);
+        }
       }
     else
       for (var usr in Users) {
@@ -91,6 +87,7 @@ socket.on('send-users',function(users){
 
 socket.on('send-map',function(_map) {
   maps = _map;
+  curmap = maps.R1;
 });
 
 socket.on('send-order-list',function (list) {
@@ -102,7 +99,7 @@ socket.on('send-order-list',function (list) {
         '<div class="order-list-person">\n'+
           '<h5><strong>Name: '+ list[ord].name +' </strong></h5>\n'+
           '<h5><strong>ID   : '+list[ord].id +' </strong></h5>\n'+
-          '<h5><strong>Position:'+ +' </strong></h5>\n'+
+          '<h5><strong>Position:'+list[ord].pos +' </strong></h5>\n'+
           '<h5><strong>Order: '+list[ord].black +' </strong></h5>\n'+
           '<h5><strong>Done? </strong></h5>\n'+
           '<span><button type="button" id="btn-order-list-remove-1" class="btn btn-default"><span class="glyphicon glyphicon-remove"></span></button></span>\n'+
@@ -124,8 +121,8 @@ document.getElementById('create').addEventListener("click",function(){
   var newid = document.getElementById("addid").value;
   var newname = document.getElementById("addname").value;
   var newpw = document.getElementById("addpwd").value;
-
-  if (newid!="" && newname!="" && newpw!="") {
+  var newrm = document.getElementById("addroom").value;
+  if (newid!="" && newname!="" && newpw!="" && newrm!="") {
     var new_user = {};
     new_user[newid] =
       {
@@ -133,6 +130,7 @@ document.getElementById('create').addEventListener("click",function(){
       "pw": newpw,
       "name": newname,
       "code": "0",
+      "room": newrm,
       "pos":""
       }
     socket.emit("add_new_user",new_user);
@@ -148,13 +146,16 @@ document.getElementById('save').addEventListener("click",function(){
   var newid = document.getElementById("id").value;
   var newname = document.getElementById("name").value;
   var newpw = document.getElementById("pwd").value;
+  var newrm = document.getElementById("room").value;
 
   if (  newid!=Users[editting_user].user
      || newname!=Users[editting_user].name
-     || newpw!=Users[editting_user].pw) {
+     || newpw!=Users[editting_user].pw
+     || newrm!=Users[editting_user].room) {
        Users[editting_user].name = document.getElementById("name").value ;
        Users[editting_user].user = document.getElementById("id").value ;
        Users[editting_user].pw = document.getElementById("pwd").value ;
+       Users[editting_user].room = document.getElementById("room").value ;
     socket.emit("change_user",Users);
     alert("Change a user");
     socket.emit('req-users',0);
@@ -177,6 +178,37 @@ document.getElementById('remove').addEventListener("click",function(){
   }
 });
 
+
+document.getElementById('room1').addEventListener("click",function(){
+  SetUserList(1);
+  curmap = maps.R1;
+  flag_redraw = 1;
+  curroom = 1;
+});
+document.getElementById('room2').addEventListener("click",function(){
+  SetUserList(2);
+  curmap = maps.R2;
+  flag_redraw = 1;
+  curroom = 2;
+});
+document.getElementById('room3').addEventListener("click",function(){
+  SetUserList("3");
+  curmap = maps.R3;
+  flag_redraw = 1;
+  curroom = 3;
+});
+document.getElementById('room4').addEventListener("click",function(){
+  SetUserList(4);
+  curmap = maps.R4;
+  flag_redraw = 1;
+  curroom = 4;
+});
+document.getElementById('room5').addEventListener("click",function(){
+  SetUserList("5");
+  curmap = maps.R5;
+  flag_redraw = 1;
+  curroom = 5;
+});
 ///////////////////////////////////////////////////////////////////////
 var flag_map = 0;
 var flag_redraw = 0;
@@ -238,19 +270,26 @@ function drawPos(pos){
     var same = pos.match(dirc[i]);
     if (same !=null)
       if (same.length>max_length) {
-      max_length_id = i;
+        max_length_id = i;
+        //max_length = same.length;
+
       }
   }
   var strg = dirc[max_length_id];
+  var abs_cdir = abs_dir[max_length_id];
   var dis = pos.substr(strg.length,pos.length);
   stroke(200, 100, 200);
   strokeWeight(10);
   var x,y = 0;
-  if (strg.charAt(strg.length-1)=='S') { x=pos1x[max_length_id]; y=pos1y[max_length_id]-dis;}
-  if (strg.charAt(strg.length-1)=='R') { x=pos1x[max_length_id]-(-dis); y=pos1y[max_length_id];}
-  if (strg.charAt(strg.length-1)=='L') { x=pos1x[max_length_id]-dis; y=pos1y[max_length_id];}
+  // if (strg.charAt(strg.length-1)=='S') { x=pos1x[max_length_id]; y=pos1y[max_length_id]-dis;}
+  // if (strg.charAt(strg.length-1)=='R') { x=pos1x[max_length_id]-(-dis); y=pos1y[max_length_id];}
+  // if (strg.charAt(strg.length-1)=='L') { x=pos1x[max_length_id]-dis; y=pos1y[max_length_id];}
+  if (abs_cdir==0) { x=pos1x[max_length_id]; y=pos1y[max_length_id]-dis;}
+  if (abs_cdir==3) { x=pos1x[max_length_id]-(-dis); y=pos1y[max_length_id];}
+  if (abs_cdir==1) { x=pos1x[max_length_id]-dis; y=pos1y[max_length_id];}
+  if (abs_cdir==2) { x=pos1x[max_length_id]; y=pos1y[max_length_id]-(-dis);}
   point(x,y);
-  console.log(x+" "+y);
+  //console.log(strg.charAt(strg.length-1));
 
 }
 //show white dot on the trace when floating over the mouse
@@ -268,7 +307,8 @@ function getPos(){
             delta_pos = -Math.round(abs(mouseX-pos1x[i]));
           }
     if (pos1x[i] == pos2x[i])
-      if (mouseY<pos1y[i] && mouseY>pos2y[i] &&
+      if (((mouseY<pos1y[i] && mouseY>pos2y[i])||
+          (mouseY>pos1y[i] && mouseY<pos2y[i])) &&
           mouseX-pos1x[i]<5 && mouseX-pos1x[i]> -5){
             stroke(255, 255, 255);
             strokeWeight(10);
@@ -287,45 +327,69 @@ function redrawmap(){
   pos2x_cp=[];
   pos2y_cp=[];
   dirc_cp=[];
-  drawmap(maps.S,'S',width/2,height,0);
+  abs_dir_cp = [];
+  drawmap(curmap.S,'S',width/2,height,0);
   pos1x = pos1x_cp;
   pos1y = pos1y_cp;
   pos2x = pos2x_cp;
   pos2y = pos2y_cp;
   dirc = dirc_cp;
+  abs_dir = abs_dir_cp;
 }
 //0: len 1:trai 2:xuong 3:phai
 function drawmap(curpos,way,x1,y1,dir) {
   var x2,y2;
-  if (curpos.F !=null){
-    if (dir==0) {x2 = x1; y2 = y1-curpos.F;}
-    if (dir==1) {x2 = x1-curpos.F; y2 = y1;}
-    if (dir==2) {x2 = x1; y2 = y1+curpos.F;}
-    if (dir==3) {x2 = x1+curpos.F; y2 = y1;}
-    pos1x_cp.push(x1); pos1y_cp.push(y1);
-    pos2x_cp.push(x2); pos2y_cp.push(y2);
-    dirc_cp.push(way);
-    line(x1,y1,x2,y2);
-    if (curpos.L!=null) {
-      if (dir==0) drawmap(curpos.L,way+'L',x2,y2,1);
-      if (dir==1) drawmap(curpos.L,way+'L',x2,y2,2);
-      if (dir==2) drawmap(curpos.L,way+'L',x2,y2,3);
-      if (dir==3) drawmap(curpos.L,way+'L',x2,y2,0);
+  if (curpos.hasOwnProperty('F')){
+    if (curpos.F !=null){
+      if (dir==0) {x2 = x1; y2 = y1-curpos.F;}
+      if (dir==1) {x2 = x1-curpos.F; y2 = y1;}
+      if (dir==2) {x2 = x1; y2 = y1+curpos.F;}
+      if (dir==3) {x2 = x1+curpos.F; y2 = y1;}
+      pos1x_cp.push(x1); pos1y_cp.push(y1);
+      pos2x_cp.push(x2); pos2y_cp.push(y2);
+      dirc_cp.push(way);abs_dir_cp.push(dir);
+      line(x1,y1,x2,y2);
+      if (curpos.L!=null) {
+        if (dir==0) drawmap(curpos.L,way+'L',x2,y2,1);
+        if (dir==1) drawmap(curpos.L,way+'L',x2,y2,2);
+        if (dir==2) drawmap(curpos.L,way+'L',x2,y2,3);
+        if (dir==3) drawmap(curpos.L,way+'L',x2,y2,0);
+      }
+      if (curpos.R!=null) {
+        if (dir==0) drawmap(curpos.R,way+'R',x2,y2,3);
+        if (dir==1) drawmap(curpos.R,way+'R',x2,y2,0);
+        if (dir==2) drawmap(curpos.R,way+'R',x2,y2,1);
+        if (dir==3) drawmap(curpos.R,way+'R',x2,y2,2);
+      }
+      if (curpos.S!=null) {
+        if (dir==0) drawmap(curpos.S,way+'S',x2,y2,0);
+        if (dir==1) drawmap(curpos.S,way+'S',x2,y2,1);
+        if (dir==2) drawmap(curpos.S,way+'S',x2,y2,2);
+        if (dir==3) drawmap(curpos.S,way+'S',x2,y2,3);
+      }
+      if (curpos.L==null && curpos.R==null && curpos.S==null){
+        //console.log(way+curpos.F);
+      }
     }
-    if (curpos.R!=null) {
-      if (dir==0) drawmap(curpos.R,way+'R',x2,y2,3);
-      if (dir==1) drawmap(curpos.R,way+'R',x2,y2,0);
-      if (dir==2) drawmap(curpos.R,way+'R',x2,y2,1);
-      if (dir==3) drawmap(curpos.R,way+'R',x2,y2,2);
-    }
-    if (curpos.S!=null) {
-      if (dir==0) drawmap(curpos.S,way+'S',x2,y2,0);
-      if (dir==1) drawmap(curpos.S,way+'S',x2,y2,1);
-      if (dir==2) drawmap(curpos.S,way+'S',x2,y2,2);
-      if (dir==3) drawmap(curpos.S,way+'S',x2,y2,3);
-    }
-    if (curpos.L==null && curpos.R==null && curpos.S==null){
-      //console.log(way+curpos.F);
+  }
+}
+
+function SetUserList(room) {
+  for (i = users_panel.options.length;i>=0; i--) {
+    //users_panel.options[i] = null;
+    users_panel1.options[i] = null;
+  }
+  var option1 = document.createElement("option");
+  option1.text = "All users";
+  users_panel1.add(option1);
+  for (var usr in Users) {
+    if (Users[usr].room == room){
+      //var option = document.createElement("option");
+      var option1 = document.createElement("option");
+      //option.text = Users[usr].name;
+      option1.text = Users[usr].name;
+      //users_panel.add(option);
+      users_panel1.add(option1);
     }
   }
 }

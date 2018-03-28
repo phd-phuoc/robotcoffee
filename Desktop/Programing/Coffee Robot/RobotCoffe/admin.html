@@ -41,8 +41,7 @@
 						<li role="presentation"><a class="active" href="#admin" aria-controls="admin" role="tab" data-toggle="tab"><span><img src="img/icon-admin.png" alt="" style="height:24px; width: 24px;"></span> Admin </a></li>
 						<li role="presentation"><a href="#user" aria-controls="user" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-user"></span> User </a></li>
 						<li role="presentation"><a href="#map" aria-controls="map" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-th"></span> Map </a></li>
-						<li role="presentation"><a href="#menu" aria-controls="menu" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-menu-hamburger"></span> Menu </a></li>
-
+						
 					</ul>
 					<!-- login area -->
 					<ul class="nav navbar-nav navbar-right">
@@ -212,13 +211,13 @@
 														<div class="form-group">
 															<label class="control-label col-sm-2" for="name">Name:</label>
 															<div class="col-sm-10">
-																<input type="name" class="form-control" id="addname" placeholder="Ex:Tran Hoang Loc">
+																<input type="name" class="form-control" id="addname" placeholder="Type user's name here">
 															</div>
 														</div>
 														<div class="form-group">
 															<label class="control-label col-sm-2" for="id">ID:</label>
 															<div class="col-sm-10">
-																<input type="id" class="form-control" id="addid" placeholder="EX: hoanglocdn95">
+																<input type="id" class="form-control" id="addid" placeholder="EX: Type user's ID here">
 															</div>
 														</div>
 														<div class="form-group">
@@ -228,10 +227,9 @@
 															</div>
 														</div>
 														<div class="form-group">
-															<div class="col-sm-offset-2 col-sm-10">
-																<div class="checkbox">
-																	<label><input type="checkbox">is VIP?</label>
-																</div>
+															<label class="control-label col-sm-2" for="pwd">Room:</label>
+															<div class="col-sm-10">
+																<input type="name" class="form-control" id="addroom" placeholder="0">
 															</div>
 														</div>
 
@@ -284,6 +282,13 @@
 																<input type="text" class="form-control" id="pwd" value="password">
 															</div>
 														</div>
+														<div class="form-group">
+															<label class="control-label col-sm-2" for="pwd">Room:</label>
+															<div class="col-sm-10">
+																<input type="text" class="form-control" id="room" value="0">
+															</div>
+														</div>
+
 
 														<br>
 														<div class="form-group">
@@ -326,9 +331,11 @@
 					<!-- Map content -->
 					<div role="tabpanel" class="tab-pane" id="map">
 						<ul class="nav nav-tabs" role="tablist">
-							<li role="presentation" class="active"><a href="#room-1" aria-controls="room-1" role="tab" data-toggle="tab"> Room 1</a></li>
-							<li role="presentation"><a href="#room-2" aria-controls="room-2" role="tab" data-toggle="tab"> Room 2</a></li>
-							<li role="presentation"><a href="#room-3" aria-controls="room-3" role="tab" data-toggle="tab"> Room3</a></li>
+							<li id = "room1" role="presentation" class="active"><a href="#room-1" aria-controls="room-1" role="tab" data-toggle="tab"> Room 1</a></li>
+							<li id = "room2" role="presentation"><a href="#room-2" aria-controls="room-2" role="tab" data-toggle="tab"> Room 2</a></li>
+							<li id = "room3" role="presentation"><a href="#room-3" aria-controls="room-3" role="tab" data-toggle="tab"> Room 3</a></li>
+							<li id = "room4" role="presentation"><a href="#room-4" aria-controls="room-4" role="tab" data-toggle="tab"> Room 4</a></li>
+							<li id = "room5" role="presentation"><a href="#room-5" aria-controls="room-5" role="tab" data-toggle="tab"> Room 5</a></li>
 						</ul>
 
 						<!-- Tab panes -->
