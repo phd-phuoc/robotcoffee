@@ -2,13 +2,25 @@
 var express = require('express');
 var app = express();
 var server = app.listen(3000);
+///////////////////////////////////
+var SerialPort = require('serialport');
+var port = new SerialPort('/dev/ttyS0',9600);
 
+var receivedDt = "";
+port.on('open', function () {
+  port.on('data',function (data) {
+    var dt = data.toString;
+    //console.log(data.toString());
+    if (dt.substr(dt.length-1)!='#') receivedDt += dt;
+    else console.log(receivedDt);
+  });
+});
+
+/////////////////////////////////////////////////////////////////////
 var order_list=[];
 var order_list_change = 0;
 
 app.use(express.static('RobotCoffe'));
-
-
 console.log("Socket server is running");
 var socket = require('socket.io');
 var io = socket(server);
@@ -25,14 +37,16 @@ var map = JSON.parse(data1);
 // fs.writeFile('users.json',data,function(){
 //   console.log(words);
 // });
-var direction = "SLS50";
-updateMap(direction);
 
-
+// updateMap("SRL200",3);
+// updateMap("SRLR150",3);
+// updateMap("SRLRL150",3);
+// updateMap("SRLRR150",3);
+// updateMap("SRLRRR30",3);
+// updateMap("SRLRRL50",3);
 
 io.sockets.on('connection',function (socket){
   console.log("New client: "+socket.conn.remoteAddress);
-
   socket.on('login',function (data) {
     //console.log(data);
     var logged_in = 0;
@@ -96,6 +110,7 @@ io.sockets.on('connection',function (socket){
   socket.on("send-order",function(order) {
     order_list.push(order);
     order_list_change = 1;
+    port.write(order.pos);port.write('\n');
     //console.log(order_list);
   });
 
@@ -107,8 +122,13 @@ io.sockets.on('connection',function (socket){
     }
   });
 
-  socket.on("req-map",function() {
-    socket.emit('send-map',map);
+  socket.on("req-map",function(id) {
+    if (id==0)socket.emit('send-map',map);
+    if (id==1)socket.emit('send-map',map.R1);
+    if (id==2)socket.emit('send-map',map.R2);
+    if (id==3)socket.emit('send-map',map.R3);
+    if (id==4)socket.emit('send-map',map.R4);
+    if (id==5)socket.emit('send-map',map.R5);
     //console.log(map);
   });
 
@@ -126,9 +146,14 @@ io.sockets.on('connection',function (socket){
 });
 
 ///////////////////////////////////////////////////////
-function updateMap(pos){
+function updateMap(pos,room){
   var cur = 0;
-  var curPos = map;
+  var curPos;
+  if (room == 1) curPos = map.R1;
+  if (room == 2) curPos = map.R2;
+  if (room == 3) curPos = map.R3;
+  if (room == 4) curPos = map.R4;
+  if (room == 5) curPos = map.R5;
   var dis=0;
   while (pos[cur]!=null){
     if (pos[cur]=="L" || pos[cur]=="R" || pos[cur]=="S"){
