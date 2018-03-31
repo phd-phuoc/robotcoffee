@@ -179,6 +179,14 @@ document.getElementById('remove').addEventListener("click",function(){
 });
 
 
+document.getElementById('analyze').addEventListener("click",function(){
+  if (confirm("Are you sure to analyze the room ?")){
+    socket.emit('analyze-room',curroom);
+    alert("Analyzing room "+curroom);
+  }
+});
+
+
 document.getElementById('room1').addEventListener("click",function(){
   SetUserList(1);
   curmap = maps.R1;
