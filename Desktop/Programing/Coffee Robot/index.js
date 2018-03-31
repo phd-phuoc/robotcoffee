@@ -6,13 +6,21 @@ var server = app.listen(3000);
 var SerialPort = require('serialport');
 var port = new SerialPort('/dev/ttyS0',9600);
 
+var analyze_flag = 0;
 var receivedDt = "";
 port.on('open', function () {
   port.on('data',function (data) {
     var dt = data.toString;
     //console.log(data.toString());
     if (dt.substr(dt.length-1)!='#') receivedDt += dt;
-    else console.log(receivedDt);
+    else {
+      console.log(receivedDt);
+      if (analyze_flag){
+        if (receivedDt != '@')
+          updateMap(receivedDt,analyze_flag);
+        else console.log("DONE");
+      }
+    }
   });
 });
 
@@ -39,11 +47,7 @@ var map = JSON.parse(data1);
 // });
 
 // updateMap("SRL200",3);
-// updateMap("SRLR150",3);
-// updateMap("SRLRL150",3);
-// updateMap("SRLRR150",3);
-// updateMap("SRLRRR30",3);
-// updateMap("SRLRRL50",3);
+//port.write("123");port.write('\n');
 
 io.sockets.on('connection',function (socket){
   console.log("New client: "+socket.conn.remoteAddress);
@@ -141,6 +145,11 @@ io.sockets.on('connection',function (socket){
         fs.writeFile('users.json',data,function(){});
       }
     }
+  });
+
+  socket.on('analyze-room',function(room) {
+    port.write("$");port.write('\n');
+    analyze_flag = room;
   });
 
 });
