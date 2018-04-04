@@ -21,7 +21,10 @@ port.on('open', function () {
           updateMap(receivedDt,analyze_flag);
           mapupdate_flag = 1;
         }
-        else console.log("DONE");
+        else {
+          console.log("DONE");
+          mapupdate_flag = 2;
+        }
       }
       receivedDt = "";
     }
@@ -159,14 +162,18 @@ io.sockets.on('connection',function (socket){
     if (room == 3) map.R3 = {"S":{}};
     if (room == 4) map.R4 = {"S":{}};
     if (room == 5) map.R5 = {"S":{}};
-    setInterval(function() {
-      if (mapupdate_flag==1)
+    var timer = setInterval(function() {
+      if (mapupdate_flag==1){
         if (room == 1) socket.emit('update-map',map.R1);
         if (room == 2) socket.emit('update-map',map.R2);
         if (room == 3) socket.emit('update-map',map.R3);
         if (room == 4) socket.emit('update-map',map.R4);
         if (room == 5) socket.emit('update-map',map.R5);
         mapupdate_flag = 0;
+      }else if (mapupdate_flag == 2) {
+        mapupdate_flag = 0;
+        clearInterval(timer);
+      }
     },1000);
   });
 
