@@ -1,10 +1,11 @@
 //#include <digitalWriteFast.h>
+#include <Wire.h>
 #include <SimpleKalmanFilter.h>
 #include <SPI.h>
 #include "nRF24L01.h"
 #include "RF24.h"
 #include "printf.h"
-#include <homephone.h>
+
 
 #define pinA1 6
 #define pinA2 7
@@ -21,12 +22,11 @@
 #define encC2 25
 
 #define maxspeed 2600
-const int Kp = 700;
-const int Ki =33;
+const int Kp = 650;
+const int Ki =36;
 const int Kd = 4000;
 int Iterm = 0;
 
-homephone lcd(39,38,37,36,35);
 
 SimpleKalmanFilter KalmanFilterA(10, 10, 0.01);
 SimpleKalmanFilter KalmanFilterB(10, 10, 0.01);
@@ -88,12 +88,12 @@ float gain = 0.13;
 String WAY = "S";
 
 void setup() {
-   //Wire.begin();
-  lcd.begin();
-  lcd.setContrast(0x10);
-  lcd.clearDisplay();
-  lcd.setTextColor(black,white);
-  lcd.display();
+//  Wire.begin();
+//  lcd.begin();
+//  lcd.setContrast(0x10);
+//  lcd.clearDisplay();
+//  lcd.setTextColor(black,white);
+//  lcd.display();
   
   Serial.begin(57600);
   REG_ADC_MR = 0x10380200;                       
@@ -103,10 +103,9 @@ void setup() {
   analogWriteResolution(12);
   analogReadResolution(10);
   calib_ss();
-  convertString("xxxxx");
+  convertString("xxxxx","Sent from DUE over I2C");
   send_message();
   get_dis();
-  
 }
 
 void loop() {
@@ -208,17 +207,17 @@ void analyze_room(){
   ////////////////////////////////////////////////
   else if(ss_value == "11111" && !turn_flag){
     ool_count++;
-    if (ool_count > 100){
-      convertString(WAY + get_dis());
+    if (ool_count > 220){
+      convertString(WAY + get_dis(),"Duong cut");
       send_message();
-      WAY.remove(WAY.length()-1,1);
+      //WAY.remove(WAY.length()-1,1);
       line_end = 1;
       turn_right();
       turn_flag = 1;
       cur_itst--;
       ool_count = 0;
       if (cur_itst <0) {
-        convertString("@");
+        convertString("@","loz");
         send_message();
         Astop();
         Bstop();
@@ -229,14 +228,12 @@ void analyze_room(){
   }
   else if(ss_value == "00000" ||
           ss_value == "00001" ||
-          ss_value == "10000" ||
-          ss_value == "00011" ||
-          ss_value == "11000"){
+          ss_value == "10000" ){
     Aforth(v1);
     Bforth(v1);
     Cstop();
     _millis = millis();
-    while (millis() - _millis < 300 ) {
+    while (millis() - _millis < 400 ) {
       get_line_ss();
       if (!ss1) turnr_flag = 1;
       if (!ss7) turnl_flag = 1;
@@ -249,14 +246,14 @@ void analyze_room(){
         xulynga4();
         turn_left();
         delay(600);
-        print_lcd("xl nga 4");
+        get_dis();
         turn_flag = 1;
       } else {
         //itst3_flag = 1;
         xulynga3T();
-        print_lcd("xl nga 3 T");
         turn_left();
         delay(600);
+        get_dis();
         turn_flag = 1;
       }
     }
@@ -273,26 +270,20 @@ void analyze_room(){
         Bforth(v1);
         Cstop();
         delay(400);
+        //get_dis();
       } else turnr_flag = 0;
       get_line_ss();
       if (ss_value != "11111"){
-        print_lcd("xl nga 3 R");
         xulynga3R();
         turn_left();
         delay(600);
+        get_dis();
         turn_flag=1;
       } else {
-        if (!line_end) {
-          convertString(WAY + get_dis());
-          send_message();
-        } else {
-          line_end = 0;
-          get_dis();
-          }
-        WAY += "L";
-        print_lcd("re trai");
+        xulynga2L();
         turn_left();
         delay(600);
+        get_dis();
         turn_flag=1;
       }
     }
@@ -310,19 +301,11 @@ void analyze_room(){
       get_line_ss();
       if (ss_value != "11111"){
         xulynga3L();
-        print_lcd("xl nga 3 L");
       } else {  
-        if (!line_end) {
-          convertString(WAY + get_dis());
-          send_message();
-        } else {
-          line_end = 0;
-          get_dis();
-        }
-        WAY += "R";
-        print_lcd("re phai");
+        xulynga2R();
         turn_right();
         delay(600);
+        get_dis();
         turn_flag=1;
       }
     }
@@ -336,7 +319,7 @@ void xulynga4(){
     itst[cur_itst] = 3;
     turn_flag = 1;
     if (!line_end) {
-          convertString(WAY + get_dis());
+          convertString(WAY + get_dis(),"nga 4");
           send_message();
         } else {
           line_end = 0;
@@ -349,12 +332,13 @@ void xulynga4(){
     itst[cur_itst] = 1;
     turn_flag = 1;
     if (!line_end) {
-          convertString(WAY + get_dis());
+          convertString(WAY + get_dis(),"nga 4");
           send_message();
         } else {
           line_end = 0;
           get_dis();
           }
+    WAY.remove(WAY.length()-1,1);
     WAY += "S";
     cur_itst++;
   }
@@ -362,12 +346,13 @@ void xulynga4(){
     itst[cur_itst] = -1;
     turn_flag = 1;
     if (!line_end) {
-          convertString(WAY + get_dis());
+          convertString(WAY + get_dis(),"nga 4");
           send_message();
         } else {
           line_end = 0;
           get_dis();
           }
+    WAY.remove(WAY.length()-1,1);
     WAY += "R";
     cur_itst++;
   }
@@ -376,6 +361,7 @@ void xulynga4(){
     cur_itst--;
     turn_flag = 1;
     WAY.remove(WAY.length()-1,1);
+    get_dis();
   }
 }
 
@@ -385,7 +371,7 @@ void xulynga3T(){
       itst[cur_itst] = 12; 
       turn_flag = 1;
       if (!line_end) {
-          convertString(WAY + get_dis());
+          convertString(WAY + get_dis(),"nga 3T");
           send_message();
         } else{
           line_end = 0;
@@ -399,17 +385,19 @@ void xulynga3T(){
       cur_itst--;
       turn_flag = 1;
       WAY.remove(WAY.length()-1,1);
+      get_dis();
     }
     else if (itst[cur_itst] == 31){
       itst[cur_itst] = -31;
       turn_flag = 1;
       if (!line_end) {
-          convertString(WAY + get_dis());
+          convertString(WAY + get_dis(),"nga 3T");
           send_message();
         } else {
           line_end = 0;
           get_dis();
           }
+      WAY.remove(WAY.length()-1,1);
       WAY += "S";
       cur_itst++;
     }
@@ -421,7 +409,7 @@ void xulynga3L(){
       itst[cur_itst] = 22; 
       //turn_flag = 1;
       if (!line_end) {
-          convertString(WAY + get_dis());
+          convertString(WAY + get_dis(),"nga 3L");
           send_message();
         } else {
           line_end = 0;
@@ -434,12 +422,13 @@ void xulynga3L(){
       itst[cur_itst] = -11;
       //turn_flag = 1;
       if (!line_end) {
-          convertString(WAY + get_dis());
+          convertString(WAY + get_dis(),"nga 3L");
           send_message();
         } else {
           line_end = 0;
           get_dis();
           };
+      WAY.remove(WAY.length()-1,1);
       WAY += "R";
       cur_itst++;
     }
@@ -448,7 +437,9 @@ void xulynga3L(){
       cur_itst--;
       //turn_flag = 1;
       WAY.remove(WAY.length()-1,1);
+      get_dis();
     }
+    
 }
 
 void xulynga3R(){
@@ -457,7 +448,7 @@ void xulynga3R(){
       itst[cur_itst] = 31; 
       turn_flag = 1;
       if (!line_end) {
-          convertString(WAY + get_dis());
+          convertString(WAY + get_dis(),"nga 3R");
           send_message();
         } else {
           line_end = 0;
@@ -471,19 +462,68 @@ void xulynga3R(){
       cur_itst--;
       turn_flag = 1;
       WAY.remove(WAY.length()-1,1);
+      get_dis();
     }
     else if (itst[cur_itst] == 22){
       itst[cur_itst] = -21;
       turn_flag = 1; 
       if (!line_end) {
-          convertString(WAY + get_dis());
+          convertString(WAY + get_dis(),"nga 3R");
           send_message();
         } else { 
           line_end = 0;
           get_dis();
         }
+      WAY.remove(WAY.length()-1,1);
       WAY += "R";
       cur_itst++;
+    }
+}
+
+void xulynga2L(){
+    if (itst[cur_itst] == 0){
+      itst[cur_itst] = -41; 
+      turn_flag = 1;
+      if (!line_end) {
+          convertString(WAY + get_dis(),"nga 2L");
+          send_message();
+        } else {
+          line_end = 0;
+          get_dis();
+        }
+      WAY += "L";
+      cur_itst++;
+    }
+    else if (itst[cur_itst] == -51){
+      itst[cur_itst] = 0;
+      cur_itst--;
+      turn_flag = 1;
+      WAY.remove(WAY.length()-1,1);
+      get_dis();
+    }
+    
+}
+
+void xulynga2R(){
+    if (itst[cur_itst] == 0){
+      itst[cur_itst] = -51; 
+      turn_flag = 1;
+      if (!line_end) {
+          convertString(WAY + get_dis(),"nga 2R");
+          send_message();
+        } else {
+          line_end = 0;
+          get_dis();
+        }
+      WAY += "R";
+      cur_itst++;
+    }
+    else if (itst[cur_itst] == -41){
+      itst[cur_itst] = 0;
+      cur_itst--;
+      turn_flag = 1;
+      WAY.remove(WAY.length()-1,1);
+      get_dis();
     }
 }
 ///////////////////////////////////////////////////////////////////
@@ -760,10 +800,11 @@ void ItrC2() {
 
 
 //////////////////////////////////////////////////////////////////////////////
-void print_lcd(String str){
-  lcd.setCursor(0,20);
-  lcd.print(str);
-  lcd.display();
+void send_i2c(String x){
+//  Wire.beginTransmission(4);
+//  for (int i = 0;i < x.length(); i++)
+//    Wire.write(x[i]);      
+//  Wire.endTransmission(); 
 }
 
 void _serialEvent() {
@@ -790,7 +831,8 @@ void _serialEvent() {
       }          
   } 
 }
-void convertString(String str){
+void convertString(String str,String intersection){
+  send_i2c(intersection);
   str+='#'; str+='\n';
   int len = str.length();
   int cur = 0;
