@@ -7,6 +7,7 @@ var SerialPort = require('serialport');
 var port = new SerialPort('/dev/ttyS0',9600);
 
 var analyze_flag = 0;
+var mapupdate_flag = 0;
 var receivedDt = "";
 port.on('open', function () {
   port.on('data',function (data) {
@@ -16,10 +17,13 @@ port.on('open', function () {
     else {
       console.log(receivedDt);
       if (analyze_flag){
-        if (receivedDt != '@')
+        if (receivedDt != '@'){
           updateMap(receivedDt,analyze_flag);
+          mapupdate_flag = 1;
+        }
         else console.log("DONE");
       }
+      receivedDt = "";
     }
   });
 });
@@ -150,6 +154,20 @@ io.sockets.on('connection',function (socket){
   socket.on('analyze-room',function(room) {
     port.write("$");port.write('\n');
     analyze_flag = room;
+    if (room == 1) map.R1 = {"S":{}};
+    if (room == 2) map.R2 = {"S":{}};
+    if (room == 3) map.R3 = {"S":{}};
+    if (room == 4) map.R4 = {"S":{}};
+    if (room == 5) map.R5 = {"S":{}};
+    setInterval(function() {
+      if (mapupdate_flag==1)
+        if (room == 1) socket.emit('update-map',map.R1);
+        if (room == 2) socket.emit('update-map',map.R2);
+        if (room == 3) socket.emit('update-map',map.R3);
+        if (room == 4) socket.emit('update-map',map.R4);
+        if (room == 5) socket.emit('update-map',map.R5);
+        mapupdate_flag = 0;
+    },1000);
   });
 
 });
@@ -183,11 +201,9 @@ function updateMap(pos,room){
         data1 = JSON.stringify(map,null,2);
         fs.writeFile('map.json',data1,function(){});
       }
-
     }
     cur++;
   }
-
 }
 
 function sendMessage(message) {
