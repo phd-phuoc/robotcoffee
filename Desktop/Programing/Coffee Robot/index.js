@@ -173,6 +173,7 @@ io.sockets.on('connection',function (socket){
       }else if (mapupdate_flag == 2) {
         mapupdate_flag = 0;
         clearInterval(timer);
+        socket.emit('scan-complete',0);
       }
     },1000);
   });
