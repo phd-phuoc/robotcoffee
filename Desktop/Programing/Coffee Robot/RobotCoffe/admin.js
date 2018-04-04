@@ -90,6 +90,11 @@ socket.on('send-map',function(_map) {
   curmap = maps.R1;
 });
 
+socket.on('scan-complete',function(){
+  updatingMap = 0;
+  alert("Scan completed");
+});
+
 socket.on('send-order-list',function (list) {
   document.getElementById('order-list-display').innerHTML = '';
   for (var ord in list ){
@@ -111,6 +116,7 @@ socket.on('send-order-list',function (list) {
 });
 
 socket.on('update-map',function(map_room){
+  updatingMap = 1;
   flag_redraw = 1;
   curmap = map_room;
 });
@@ -233,6 +239,7 @@ var pos2x_cp=[];
 var pos2y_cp=[];
 var dirc_cp=[];
 var x_start ,y_start;
+var updatingMap = 0;
 
 function setup() {
   var width = 900;
@@ -265,7 +272,7 @@ function mousePressed() {
   if (flag_pos_valid!=0 && flag_set_pos == 1){
     //console.log(dirc[flag_pos_valid-1]+abs(delta_pos));
     document.getElementById('alert-set-pos').innerHTML="";
-    var strg = dirc[flag_pos_valid-1]+abs(delta_pos)
+    var strg = dirc[flag_pos_valid-1]+abs(delta_pos);
     alert("Position for "+cur_pos_name+" is "+strg);
     flag_pos_valid = 0;
     flag_set_pos = 0;
@@ -334,6 +341,9 @@ function getPos(){
   }
 }
 function redrawmap(){
+  stroke(0, 255, 0);
+  strokeWeight(10);
+  point(x_start,y_start);
   stroke(255, 204, 255);
   strokeWeight(4);
   pos1x_cp=[];
@@ -363,11 +373,17 @@ function drawmap(curpos,way,x1,y1,dir) {
       pos2x_cp.push(x2); pos2y_cp.push(y2);
       dirc_cp.push(way);abs_dir_cp.push(dir);
       line(x1,y1,x2,y2);
-      if (x2<0) {x_start += -x2+3; flag_redraw = 1;}
-      if (x2>width) {x_start -= x2-width+3; flag_redraw = 1;}
-      if (y2<0) {y_start += -y2+3; flag_redraw = 1;}
-      if (y2>height) {y_start -= y2-height+3; flag_redraw = 1;}
-
+      if (updatingMap){
+        if (x2<0) {x_start += -x2+3; flag_redraw = 1;}
+        if (x2>width) {x_start -= x2-width+3; flag_redraw = 1;}
+        if (y2<0) {y_start += -y2+3; flag_redraw = 1;}
+        if (y2>height) {y_start -= y2-height+3; flag_redraw = 1;}
+      } else {
+        if (x2<0) {x_start -= 1; flag_redraw = 1;}
+        if (x2>width) {x_start += 1; flag_redraw = 1;}
+        if (y2<0) {y_start += 1; flag_redraw = 1;}
+        if (y2>height) {y_start -= 1; flag_redraw = 1;}
+      }
       if (curpos.L!=null) {
         if (dir==0) drawmap(curpos.L,way+'L',x2,y2,1);
         if (dir==1) drawmap(curpos.L,way+'L',x2,y2,2);
