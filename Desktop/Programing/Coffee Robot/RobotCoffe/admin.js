@@ -110,6 +110,11 @@ socket.on('send-order-list',function (list) {
   }
 });
 
+socket.on('update-map',function(map_room){
+  flag_redraw = 1;
+  curmap = map_room;
+});
+
 ///////////////////////////////////////////////////////////////////////////////
 document.getElementById('set-pos').addEventListener("click",function(){
   document.getElementById('alert-set-pos').innerHTML="Set postiton";
@@ -227,6 +232,7 @@ var pos1y_cp=[];
 var pos2x_cp=[];
 var pos2y_cp=[];
 var dirc_cp=[];
+var x_start ,y_start;
 
 function setup() {
   var width = 900;
@@ -234,7 +240,8 @@ function setup() {
   var canvas1 = createCanvas(width,height);
   background(51);
   canvas1.parent('rooms');
-
+  x_start = width/2;
+  y_start = height;
 }
 
 function draw(){
@@ -280,7 +287,6 @@ function drawPos(pos){
       if (same.length>max_length) {
         max_length_id = i;
         //max_length = same.length;
-
       }
   }
   var strg = dirc[max_length_id];
@@ -336,7 +342,7 @@ function redrawmap(){
   pos2y_cp=[];
   dirc_cp=[];
   abs_dir_cp = [];
-  drawmap(curmap.S,'S',width/2,height,0);
+  drawmap(curmap.S,'S',x_start,y_start,0);
   pos1x = pos1x_cp;
   pos1y = pos1y_cp;
   pos2x = pos2x_cp;
@@ -357,6 +363,11 @@ function drawmap(curpos,way,x1,y1,dir) {
       pos2x_cp.push(x2); pos2y_cp.push(y2);
       dirc_cp.push(way);abs_dir_cp.push(dir);
       line(x1,y1,x2,y2);
+      if (x2<0) {x_start += -x2+3; flag_redraw = 1;}
+      if (x2>width) {x_start -= x2-width+3; flag_redraw = 1;}
+      if (y2<0) {y_start += -y2+3; flag_redraw = 1;}
+      if (y2>height) {y_start -= y2-height+3; flag_redraw = 1;}
+
       if (curpos.L!=null) {
         if (dir==0) drawmap(curpos.L,way+'L',x2,y2,1);
         if (dir==1) drawmap(curpos.L,way+'L',x2,y2,2);
@@ -401,7 +412,6 @@ function SetUserList(room) {
     }
   }
 }
-
 
 //http://www.example.com/index.php?id=1&image=awesome.jpg
 function getQueryVariable(variable)
