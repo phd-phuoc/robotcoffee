@@ -11,6 +11,7 @@ var pos2x = [];
 var pos2y = [];
 var dirc = [];
 var abs_dir = [];
+var cur_pos = "";
 
 var code = getQueryVariable("code");
 socket.emit("get-user-by-code",code);
@@ -31,6 +32,13 @@ socket.on('send-map',function(_map) {
   map = _map;
   console.log("A");
   flag_map = 1;
+});
+socket.on('current-pos',function(pos) {
+  cur_pos = pos;
+  flag_redraw = 1;
+});
+socket.on('moving-complete',function() {
+  alert('Robot has arrived.');
 });
 
 ///////////////////////////////////////////////////
@@ -64,6 +72,7 @@ var pos1y_cp=[];
 var pos2x_cp=[];
 var pos2y_cp=[];
 var dirc_cp=[];
+var x_start ,y_start;
 
 function setup() {
   var width = 900;
@@ -71,7 +80,8 @@ function setup() {
   var canvas1 = createCanvas(width,height);
   background(51);
   canvas1.parent('room');
-
+  x_start = width/2;
+  y_start = height;
 }
 
 function draw(){
@@ -83,11 +93,42 @@ function draw(){
   if (flag_redraw==1){
     background(51);
     redrawmap();
+    drawPos(user.pos);
+    if (cur_pos != "") drawPos(cur_pos);
     flag_redraw=0;
   }
 }
 
 ///////////////////////////////////////////////////////////////////////
+function updatePos(pos){
+  var max_length = 0;
+  var max_length_id = 0;
+  for (var i = 0;i<dirc.length;i++){
+    var same = pos.match(dirc[i]);
+    if (same !=null)
+      if (same.length>max_length) {
+        max_length_id = i;
+        //max_length = same.length;
+      }
+  }
+  var strg = dirc[max_length_id];
+  var abs_cdir = abs_dir[max_length_id];
+  var dis = pos.substr(strg.length,pos.length);
+  stroke(200, 200, 0);
+  strokeWeight(10);
+  var x,y = 0;
+  // if (strg.charAt(strg.length-1)=='S') { x=pos1x[max_length_id]; y=pos1y[max_length_id]-dis;}
+  // if (strg.charAt(strg.length-1)=='R') { x=pos1x[max_length_id]-(-dis); y=pos1y[max_length_id];}
+  // if (strg.charAt(strg.length-1)=='L') { x=pos1x[max_length_id]-dis; y=pos1y[max_length_id];}
+  if (abs_cdir==0) { x=pos1x[max_length_id]; y=pos1y[max_length_id]-dis;}
+  if (abs_cdir==3) { x=pos1x[max_length_id]-(-dis); y=pos1y[max_length_id];}
+  if (abs_cdir==1) { x=pos1x[max_length_id]-dis; y=pos1y[max_length_id];}
+  if (abs_cdir==2) { x=pos1x[max_length_id]; y=pos1y[max_length_id]-(-dis);}
+  point(x,y);
+  //console.log(strg.charAt(strg.length-1));
+
+}
+
 function drawPos(pos){
   var max_length = 0;
   var max_length_id = 0;
@@ -118,6 +159,9 @@ function drawPos(pos){
 }
 
 function redrawmap(){
+  stroke(0, 255, 0);
+  strokeWeight(10);
+  point(x_start,y_start);
   stroke(255, 204, 255);
   strokeWeight(4);
   pos1x_cp=[];
@@ -126,7 +170,7 @@ function redrawmap(){
   pos2y_cp=[];
   dirc_cp=[];
   abs_dir_cp = [];
-  drawmap(map.S,'S',width/2,height,0);
+  drawmap(map.S,'S',x_start,y_start,0);
   pos1x = pos1x_cp;
   pos1y = pos1y_cp;
   pos2x = pos2x_cp;
@@ -147,6 +191,12 @@ function drawmap(curpos,way,x1,y1,dir) {
       pos2x_cp.push(x2); pos2y_cp.push(y2);
       dirc_cp.push(way);abs_dir_cp.push(dir);
       line(x1,y1,x2,y2);
+
+      if (x2<0) {x_start -= 1; flag_redraw = 1;}
+      if (x2>width) {x_start += 1; flag_redraw = 1;}
+      if (y2<0) {y_start += 1; flag_redraw = 1;}
+      if (y2>height) {y_start -= 1; flag_redraw = 1;}
+
       if (curpos.L!=null) {
         if (dir==0) drawmap(curpos.L,way+'L',x2,y2,1);
         if (dir==1) drawmap(curpos.L,way+'L',x2,y2,2);

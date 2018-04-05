@@ -121,6 +121,11 @@ socket.on('update-map',function(map_room){
   curmap = map_room;
 });
 
+socket.on('current-pos',function(pos) {
+  cur_pos = pos;
+  flag_redraw = 1;
+});
+
 ///////////////////////////////////////////////////////////////////////////////
 document.getElementById('set-pos').addEventListener("click",function(){
   document.getElementById('alert-set-pos').innerHTML="Set postiton";
@@ -240,6 +245,7 @@ var pos2y_cp=[];
 var dirc_cp=[];
 var x_start ,y_start;
 var updatingMap = 0;
+var cur_pos = "";
 
 function setup() {
   var width = 900;
@@ -259,6 +265,7 @@ function draw(){
   if (flag_redraw==1){
     background(51);
     redrawmap();
+    if (cur_pos != "") drawPos(cur_pos);
     flag_redraw=0;
   }
   if(flag_map==1){
@@ -283,6 +290,34 @@ function mousePressed() {
     };
     socket.emit('set_pos',data);
   }
+}
+
+function updatePos(pos){
+  var max_length = 0;
+  var max_length_id = 0;
+  for (var i = 0;i<dirc.length;i++){
+    var same = pos.match(dirc[i]);
+    if (same !=null)
+      if (same.length>max_length) {
+        max_length_id = i;
+        //max_length = same.length;
+      }
+  }
+  var strg = dirc[max_length_id];
+  var abs_cdir = abs_dir[max_length_id];
+  var dis = pos.substr(strg.length,pos.length);
+  stroke(200, 200, 0);
+  strokeWeight(10);
+  var x,y = 0;
+  // if (strg.charAt(strg.length-1)=='S') { x=pos1x[max_length_id]; y=pos1y[max_length_id]-dis;}
+  // if (strg.charAt(strg.length-1)=='R') { x=pos1x[max_length_id]-(-dis); y=pos1y[max_length_id];}
+  // if (strg.charAt(strg.length-1)=='L') { x=pos1x[max_length_id]-dis; y=pos1y[max_length_id];}
+  if (abs_cdir==0) { x=pos1x[max_length_id]; y=pos1y[max_length_id]-dis;}
+  if (abs_cdir==3) { x=pos1x[max_length_id]-(-dis); y=pos1y[max_length_id];}
+  if (abs_cdir==1) { x=pos1x[max_length_id]-dis; y=pos1y[max_length_id];}
+  if (abs_cdir==2) { x=pos1x[max_length_id]; y=pos1y[max_length_id]-(-dis);}
+  point(x,y);
+  //console.log(strg.charAt(strg.length-1));
 }
 
 function drawPos(pos){
@@ -311,7 +346,6 @@ function drawPos(pos){
   if (abs_cdir==2) { x=pos1x[max_length_id]; y=pos1y[max_length_id]-(-dis);}
   point(x,y);
   //console.log(strg.charAt(strg.length-1));
-
 }
 //show white dot on the trace when floating over the mouse
 function getPos(){
