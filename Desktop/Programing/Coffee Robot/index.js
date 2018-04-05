@@ -8,15 +8,18 @@ var port = new SerialPort('/dev/ttyS0',9600);
 
 var analyze_flag = 0;
 var mapupdate_flag = 0;
+var moving_flag = 0;
+var current_pos = "";
+
 var receivedDt = "";
 port.on('open', function () {
   port.on('data',function (data) {
-    var dt = data.toString;
+    var dt = data.toString();
     //console.log(data.toString());
     if (dt.substr(dt.length-1)!='#') receivedDt += dt;
     else {
       console.log(receivedDt);
-      if (analyze_flag){
+      if (analyze_flag){ // analyze room
         if (receivedDt != '@'){
           updateMap(receivedDt,analyze_flag);
           mapupdate_flag = 1;
@@ -24,6 +27,14 @@ port.on('open', function () {
         else {
           console.log("DONE");
           mapupdate_flag = 2;
+          analyze_flag = 0;
+        }
+      } else if (moving_flag==1) {
+        if (receivedDt =='%') {//finish deliver
+          moving_flag = 2;
+        }
+        else{
+          current_pos = receivedDt;
         }
       }
       receivedDt = "";
@@ -121,7 +132,17 @@ io.sockets.on('connection',function (socket){
   socket.on("send-order",function(order) {
     order_list.push(order);
     order_list_change = 1;
+    moving_flag = 1;
     port.write(order.pos);port.write('\n');
+    var timer_moving = setInterval(function() {
+      if (moving_flag==1){
+        io.sockets.emit('current-pos',current_pos);
+      }else if (moving_flag == 2) {
+        moving_flag = 0;
+        clearInterval(timer_moving);
+        socket.emit('moving-complete',0);
+      }
+    },500);
     //console.log(order_list);
   });
 
