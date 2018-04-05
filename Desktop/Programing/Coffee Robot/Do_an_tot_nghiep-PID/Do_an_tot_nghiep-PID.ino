@@ -64,7 +64,6 @@ uint32_t valueIR1, valueIR2, valueIR3, valueIR4, valueIR5, valueIR6, valueIR7;
 
 uint32_t thres[7] = {500,500,500,500,500,500,500};
 bool ss1=1,ss2=1,ss3=1,ss4=1,ss5=1,ss6=1,ss7=1;
-//bool lss1=1,lss2=1,lss3=1,lss4=1,lss5=1,lss6=1,lss7=1;
 String ss_value = "";
 
 int ool_count = 0;
@@ -82,10 +81,17 @@ int max_itst = 0;
 int itst3_flag,itst4_flag;  
 bool analyze_flag = 0;
 bool line_end = 0;
+bool return_flag = 0;
+bool stop_flag = 0;
 
 float gain = 0.13;
 
 String WAY = "S";
+String ORDER = "";
+String rev_ORDER = "";
+int ord_dis = 0;
+int cur_ord = 1;
+int cur_rev = 0;
 
 void setup() {
 //  Wire.begin();
@@ -103,9 +109,9 @@ void setup() {
   analogWriteResolution(12);
   analogReadResolution(10);
   calib_ss();
-  convertString("xxxxx","Sent from DUE over I2C");
+  convertString("Robot is ready","Sent from DUE over I2C");
   send_message();
-  get_dis();
+  reset_dis();
 }
 
 void loop() {
@@ -115,42 +121,356 @@ void loop() {
   
   //tune_PID();
   nRF_receive(); 
+  if (ORDER != ""){
+    deliver();
+  }
+  if (return_flag ==1){
+    returnbase();
+  }
   if (analyze_flag) {
     analyze_room();
   }
 }
 
-/////////////////////////////////////////////////////
-void get_line_ss(){
-  valueIR1 = valueIR1*gain + (1-gain)*analogRead(A0);
-  valueIR2 = valueIR2*gain + (1-gain)*analogRead(A1);
-  valueIR3 = valueIR3*gain + (1-gain)*analogRead(A2);
-  valueIR4 = valueIR4*gain + (1-gain)*analogRead(A3);
-  valueIR5 = valueIR5*gain + (1-gain)*analogRead(A4);
-  valueIR6 = valueIR6*gain + (1-gain)*analogRead(A5);
-  valueIR7 = valueIR7*gain + (1-gain)*analogRead(A6);
-  ss1 = ValueIR(valueIR1,thres[0]); 
-  ss2 = ValueIR(valueIR2,thres[1]);
-  ss3 = ValueIR(valueIR3,thres[2]);
-  ss4 = ValueIR(valueIR4,thres[3]);
-  ss5 = ValueIR(valueIR5,thres[4]);
-  ss6 = ValueIR(valueIR6,thres[5]);
-  ss7 = ValueIR(valueIR7,thres[6]);
+///////////////////////////////////////////////////////////////////////////////////
+void returnbase(){
+  get_line_ss();
+  if (ss_value == "11011"){
+    error = 0;
+    turn_flag = 0;
+    ool_count = 0;
+    if (stop_flag)
+      finish_return();
+  }
+  //////////////////////////////////////////
+  else if(ss_value== "11001"){ 
+    error = 1;
+    turn_flag = 0;
+    ool_count = 0;
+    if (stop_flag)
+      finish_return();
+  }
+  else if(ss_value == "10011"){ 
+    error = -1;
+    turn_flag = 0;
+    ool_count = 0;
+    if (stop_flag)
+      finish_return();
+  }
+  ////////////////////////////////////////
+  else if(ss_value == "11101" ){
+    error = 2;
+    turn_flag = 0;
+    ool_count = 0;
+    if (stop_flag)
+      finish_return();
+  }
+  else if(ss_value == "10111" ){ 
+    error = -2;
+    turn_flag = 0;
+    ool_count = 0;
+    if (stop_flag)
+      finish_return();
+  }
+  ///////////////////////////////////////////
+  else if(ss_value == "11100" && !turn_flag){ 
+    error = 3;
+  }
+  else if(ss_value == "00111" && !turn_flag){ 
+    error = -3;
+  }
+  ///////////////////////////////////////////
+  else if(ss_value == "11110" && !turn_flag){
+    error = 4;
+  }
+  else if(ss_value == "01111" && !turn_flag){
+    error = -4;
+  }
+  ////////////////////////////////////////////////
+  else if(ss_value == "11111" && !turn_flag){
+    ool_count++;
+    if (ool_count > 220){
+      line_end = 1;
+      turn_right();
+      turn_flag = 1;
+      ool_count = 0;
+      if (cur_rev == rev_ORDER.length()-1) {
+        stop_flag = 1;
+      }
+    }
+  }
+  else if(ss_value == "00000" ||
+          ss_value == "00001" ||
+          ss_value == "10000" ){
+    go_forth();
+    _millis = millis();
+    while (millis() - _millis < 400 ) {
+      get_line_ss();
+      if (!ss1) turnr_flag = 1;
+      if (!ss7) turnl_flag = 1;
+    }
+    if (turnl_flag && turnr_flag){
+      turnl_flag = 0;
+      turnr_flag = 0;
+      get_line_ss();
+      if (ss_value != "11111"){
+        if (rev_ORDER[cur_rev] == 'L') turn_left();
+        if (rev_ORDER[cur_rev] == 'R') turn_right();
+        if (rev_ORDER[cur_rev] == 'S') go_forth();
+        cur_rev++;
+        delay(600);
+        reset_dis();
+        turn_flag = 1;
+      } else {
+        if (rev_ORDER[cur_rev] == 'L') turn_left();
+        if (rev_ORDER[cur_rev] == 'R') turn_right();
+        cur_rev++;
+        delay(600);
+        reset_dis();
+        turn_flag = 1;
+      }
+    }
+  }
 
-  ss_value="";
-  //ss_value += ss1;
-  ss_value += ss2;
-  ss_value += ss3;
-  ss_value += ss4;
-  ss_value += ss5;
-  ss_value += ss6;
-  //ss_value += ss7;
+  if (!turn_flag) cPID();
   
-//  Serial.print(ss1);
-//  Serial.print(ss_value);
-//  Serial.print(ss7);
+  if ((!ss1 && ss7 && !turn_flag) || turnr_flag){
+    lt_count++;
+    if (lt_count>0){
+      lt_count = 0;
+      if (!turnr_flag) {
+        go_forth();
+        delay(400);
+      } else turnr_flag = 0;
+      get_line_ss();
+      if (ss_value != "11111"){
+        if (rev_ORDER[cur_rev] == 'L') turn_left();
+        if (rev_ORDER[cur_rev] == 'S') go_forth();
+        cur_rev++;
+        delay(600);
+        reset_dis();
+        turn_flag=1;
+      } else {
+        if (rev_ORDER[cur_rev] == 'L') turn_left();
+        if (rev_ORDER[cur_rev] == 'S') go_forth();
+        cur_rev++;
+        delay(600);
+        reset_dis();
+        turn_flag=1;
+      }
+    }
+  }
+  else if ((!ss7 && ss1 && !turn_flag) || turnl_flag){
+    rt_count++;
+    if (rt_count>0){
+      rt_count = 0;
+      if (!turnl_flag){
+        go_forth();
+        delay(400);
+      } else turnl_flag = 0;
+      get_line_ss();
+      if (ss_value != "11111"){
+        if (rev_ORDER[cur_rev] == 'R') turn_right();
+        if (rev_ORDER[cur_rev] == 'S') go_forth();
+        cur_rev++;
+        reset_dis();
+      } else {  
+        if (rev_ORDER[cur_rev] == 'R') turn_right();
+        cur_rev++;
+        delay(600);
+        reset_dis();
+        turn_flag=1;
+      }
+    }
+  }
+  // report vi tri luc ve, kho'
+  //if (millis() - _millis > 500 ) {
+    //_millis = millis();
+    //convertString(ORDER.substring(0,cur_ord)+String(count_dis()),"feedingback");
+    //send_message();
+  //}
+  
 }
 
+void finish_return(){
+  Astop();
+  Bstop();
+  Cstop();
+  stop_flag = 0;
+  return_flag = 0;
+  convertString("*","Returned");
+  send_message();
+  delay(1000);
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+void deliver(){
+  get_line_ss();
+  if (ss_value == "11011"){
+    error = 0;
+    turn_flag = 0;
+    ool_count = 0;
+  }
+  //////////////////////////////////////////
+  else if(ss_value== "11001"){ 
+    error = 1;
+    turn_flag = 0;
+    ool_count = 0;
+  }
+  else if(ss_value == "10011"){ 
+    error = -1;
+    turn_flag = 0;
+    ool_count = 0;
+  }
+  ////////////////////////////////////////
+  else if(ss_value == "11101" ){
+    error = 2;
+    turn_flag = 0;
+    ool_count = 0;
+  }
+  else if(ss_value == "10111" ){ 
+    error = -2;
+    turn_flag = 0;
+    ool_count = 0;
+  }
+  ///////////////////////////////////////////
+  else if(ss_value == "11100" && !turn_flag){ 
+    error = 3;
+  }
+  else if(ss_value == "00111" && !turn_flag){ 
+    error = -3;
+  }
+  ///////////////////////////////////////////
+  else if(ss_value == "11110" && !turn_flag){
+    error = 4;
+  }
+  else if(ss_value == "01111" && !turn_flag){
+    error = -4;
+  }
+  ////////////////////////////////////////////////
+  else if(ss_value == "11111" && !turn_flag){
+    ool_count++;
+    if (ool_count > 220){
+      line_end = 1;
+      turn_right();
+      turn_flag = 1;
+      cur_itst--;
+      ool_count = 0;
+      if (cur_itst <0) {
+        Astop();
+        Bstop();
+        Cstop();
+        analyze_flag = 0;
+      }
+    }
+  }
+  else if(ss_value == "00000" ||
+          ss_value == "00001" ||
+          ss_value == "10000" ){
+    go_forth();
+    _millis = millis();
+    while (millis() - _millis < 400 ) {
+      get_line_ss();
+      if (!ss1) turnr_flag = 1;
+      if (!ss7) turnl_flag = 1;
+    }
+    if (turnl_flag && turnr_flag){
+      turnl_flag = 0;
+      turnr_flag = 0;
+      get_line_ss();
+      if (ss_value != "11111"){
+        if (ORDER[cur_ord] == 'L') turn_left();
+        if (ORDER[cur_ord] == 'R') turn_right();
+        if (ORDER[cur_ord] == 'S') go_forth();
+        cur_ord++;
+        delay(600);
+        reset_dis();
+        turn_flag = 1;
+      } else {
+        if (ORDER[cur_ord] == 'L') turn_left();
+        if (ORDER[cur_ord] == 'R') turn_right();
+        cur_ord++;
+        delay(600);
+        reset_dis();
+        turn_flag = 1;
+      }
+    }
+  }
+
+  if (!turn_flag) cPID();
+  
+  if ((!ss1 && ss7 && !turn_flag) || turnr_flag){
+    lt_count++;
+    if (lt_count>0){
+      lt_count = 0;
+      if (!turnr_flag) {
+        go_forth();
+        delay(400);
+      } else turnr_flag = 0;
+      get_line_ss();
+      if (ss_value != "11111"){
+        if (ORDER[cur_ord] == 'L') turn_left();
+        if (ORDER[cur_ord] == 'S') go_forth();
+        cur_ord++;
+        delay(600);
+        reset_dis();
+        turn_flag=1;
+      } else {
+        if (ORDER[cur_ord] == 'L') turn_left();
+        if (ORDER[cur_ord] == 'S') go_forth();
+        cur_ord++;
+        delay(600);
+        reset_dis();
+        turn_flag=1;
+      }
+    }
+  }
+  else if ((!ss7 && ss1 && !turn_flag) || turnl_flag){
+    rt_count++;
+    if (rt_count>0){
+      rt_count = 0;
+      if (!turnl_flag){
+        go_forth();
+        delay(400);
+      } else turnl_flag = 0;
+      get_line_ss();
+      if (ss_value != "11111"){
+        if (ORDER[cur_ord] == 'R') turn_right();
+        if (ORDER[cur_ord] == 'S') go_forth();
+        cur_ord++;
+        reset_dis();
+      } else {  
+        if (ORDER[cur_ord] == 'R') turn_right();
+        cur_ord++;
+        delay(600);
+        reset_dis();
+        turn_flag=1;
+      }
+    }
+  }
+
+  if (cur_ord == ORDER.length()) 
+    if (count_dis() > ord_dis){
+      ORDER = "";
+      Astop();
+      Bstop();
+      Cstop();
+      convertString("%","finish");
+      send_message();
+      
+      delay(5000);
+      return_flag = 1;
+    }
+
+  if (millis() - _millis > 500 ) {
+    _millis = millis();
+    convertString(ORDER.substring(0,cur_ord)+String(count_dis()),"feedingback");
+    send_message();
+  }
+  
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
 void analyze_room(){
   get_line_ss();
   if (ss_value == "11011"){
@@ -229,9 +549,7 @@ void analyze_room(){
   else if(ss_value == "00000" ||
           ss_value == "00001" ||
           ss_value == "10000" ){
-    Aforth(v1);
-    Bforth(v1);
-    Cstop();
+    go_forth();
     _millis = millis();
     while (millis() - _millis < 400 ) {
       get_line_ss();
@@ -246,14 +564,14 @@ void analyze_room(){
         xulynga4();
         turn_left();
         delay(600);
-        get_dis();
+        reset_dis();
         turn_flag = 1;
       } else {
         //itst3_flag = 1;
         xulynga3T();
         turn_left();
         delay(600);
-        get_dis();
+        reset_dis();
         turn_flag = 1;
       }
     }
@@ -266,24 +584,22 @@ void analyze_room(){
     if (lt_count>0){
       lt_count = 0;
       if (!turnr_flag) {
-        Aforth(v1);
-        Bforth(v1);
-        Cstop();
+        go_forth();
         delay(400);
-        //get_dis();
+        //reset_dis();
       } else turnr_flag = 0;
       get_line_ss();
       if (ss_value != "11111"){
         xulynga3R();
         turn_left();
         delay(600);
-        get_dis();
+        reset_dis();
         turn_flag=1;
       } else {
         xulynga2L();
         turn_left();
         delay(600);
-        get_dis();
+        reset_dis();
         turn_flag=1;
       }
     }
@@ -293,9 +609,7 @@ void analyze_room(){
     if (rt_count>0){
       rt_count = 0;
       if (!turnl_flag){
-        Aforth(v1);
-        Bforth(v1);
-        Cstop();
+        go_forth();
         delay(400);
       } else turnl_flag = 0;
       get_line_ss();
@@ -305,7 +619,7 @@ void analyze_room(){
         xulynga2R();
         turn_right();
         delay(600);
-        get_dis();
+        reset_dis();
         turn_flag=1;
       }
     }
@@ -323,7 +637,7 @@ void xulynga4(){
           send_message();
         } else {
           line_end = 0;
-          get_dis();
+          reset_dis();
         }
     WAY += "L";
     cur_itst++;
@@ -336,7 +650,7 @@ void xulynga4(){
           send_message();
         } else {
           line_end = 0;
-          get_dis();
+          reset_dis();
           }
     WAY.remove(WAY.length()-1,1);
     WAY += "S";
@@ -350,7 +664,7 @@ void xulynga4(){
           send_message();
         } else {
           line_end = 0;
-          get_dis();
+          reset_dis();
           }
     WAY.remove(WAY.length()-1,1);
     WAY += "R";
@@ -361,7 +675,7 @@ void xulynga4(){
     cur_itst--;
     turn_flag = 1;
     WAY.remove(WAY.length()-1,1);
-    get_dis();
+    reset_dis();
   }
 }
 
@@ -375,7 +689,7 @@ void xulynga3T(){
           send_message();
         } else{
           line_end = 0;
-          get_dis();
+          reset_dis();
           }
       WAY += "L";
       cur_itst++;
@@ -385,7 +699,7 @@ void xulynga3T(){
       cur_itst--;
       turn_flag = 1;
       WAY.remove(WAY.length()-1,1);
-      get_dis();
+      reset_dis();
     }
     else if (itst[cur_itst] == 31){
       itst[cur_itst] = -31;
@@ -395,7 +709,7 @@ void xulynga3T(){
           send_message();
         } else {
           line_end = 0;
-          get_dis();
+          reset_dis();
           }
       WAY.remove(WAY.length()-1,1);
       WAY += "S";
@@ -413,7 +727,7 @@ void xulynga3L(){
           send_message();
         } else {
           line_end = 0;
-          get_dis();
+          reset_dis();
           }
       WAY += "S";
       cur_itst++;
@@ -426,7 +740,7 @@ void xulynga3L(){
           send_message();
         } else {
           line_end = 0;
-          get_dis();
+          reset_dis();
           };
       WAY.remove(WAY.length()-1,1);
       WAY += "R";
@@ -437,7 +751,7 @@ void xulynga3L(){
       cur_itst--;
       //turn_flag = 1;
       WAY.remove(WAY.length()-1,1);
-      get_dis();
+      reset_dis();
     }
     
 }
@@ -452,7 +766,7 @@ void xulynga3R(){
           send_message();
         } else {
           line_end = 0;
-          get_dis();
+          reset_dis();
         }
       WAY += "L";
       cur_itst++;
@@ -462,7 +776,7 @@ void xulynga3R(){
       cur_itst--;
       turn_flag = 1;
       WAY.remove(WAY.length()-1,1);
-      get_dis();
+      reset_dis();
     }
     else if (itst[cur_itst] == 22){
       itst[cur_itst] = -21;
@@ -472,7 +786,7 @@ void xulynga3R(){
           send_message();
         } else { 
           line_end = 0;
-          get_dis();
+          reset_dis();
         }
       WAY.remove(WAY.length()-1,1);
       WAY += "R";
@@ -489,7 +803,7 @@ void xulynga2L(){
           send_message();
         } else {
           line_end = 0;
-          get_dis();
+          reset_dis();
         }
       WAY += "L";
       cur_itst++;
@@ -499,7 +813,7 @@ void xulynga2L(){
       cur_itst--;
       turn_flag = 1;
       WAY.remove(WAY.length()-1,1);
-      get_dis();
+      reset_dis();
     }
     
 }
@@ -513,7 +827,7 @@ void xulynga2R(){
           send_message();
         } else {
           line_end = 0;
-          get_dis();
+          reset_dis();
         }
       WAY += "R";
       cur_itst++;
@@ -523,7 +837,7 @@ void xulynga2R(){
       cur_itst--;
       turn_flag = 1;
       WAY.remove(WAY.length()-1,1);
-      get_dis();
+      reset_dis();
     }
 }
 ///////////////////////////////////////////////////////////////////
@@ -544,8 +858,33 @@ void cPID(){
   Aforth(rightMotorSpeed);
   Bforth(leftMotorSpeed);
   Cstop();
+}
 
-  
+///////////////////////////////////////////////////////////////////////////////
+void get_line_ss(){
+  valueIR1 = valueIR1*gain + (1-gain)*analogRead(A0);
+  valueIR2 = valueIR2*gain + (1-gain)*analogRead(A1);
+  valueIR3 = valueIR3*gain + (1-gain)*analogRead(A2);
+  valueIR4 = valueIR4*gain + (1-gain)*analogRead(A3);
+  valueIR5 = valueIR5*gain + (1-gain)*analogRead(A4);
+  valueIR6 = valueIR6*gain + (1-gain)*analogRead(A5);
+  valueIR7 = valueIR7*gain + (1-gain)*analogRead(A6);
+  ss1 = ValueIR(valueIR1,thres[0]); 
+  ss2 = ValueIR(valueIR2,thres[1]);
+  ss3 = ValueIR(valueIR3,thres[2]);
+  ss4 = ValueIR(valueIR4,thres[3]);
+  ss5 = ValueIR(valueIR5,thres[4]);
+  ss6 = ValueIR(valueIR6,thres[5]);
+  ss7 = ValueIR(valueIR7,thres[6]);
+
+  ss_value="";
+  //ss_value += ss1;
+  ss_value += ss2;
+  ss_value += ss3;
+  ss_value += ss4;
+  ss_value += ss5;
+  ss_value += ss6;
+  //ss_value += ss7;
 }
 //////////////////////////////////////////////////////////////////////////////////
 void test_speed_tconst(){
@@ -596,6 +935,19 @@ String get_dis(){
   totalcountB = 0;
   //Serial.println(dis);
   return String(dis);
+}
+
+int count_dis(){
+  _totalcountA=totalcountA;
+  _totalcountB=totalcountB;
+  long totalcount = (_totalcountA+_totalcountB)/2;
+  int dis = totalcount*18.22/660/2;
+  return dis;
+}
+
+void reset_dis(){
+  totalcountA = 0;
+  totalcountB = 0;
 }
 
 void calib_ss(){
@@ -674,7 +1026,11 @@ void calib_ss(){
 
 
 ////////////////////////////////////////////
-
+void go_forth(){
+  Aforth(v1);
+  Bforth(v1);
+  Cstop(); 
+}
 void turn_left(){
   Aback(v1);
   Bforth(v1);
@@ -832,7 +1188,7 @@ void _serialEvent() {
   } 
 }
 void convertString(String str,String intersection){
-  send_i2c(intersection);
+  //send_i2c(intersection);
   str+='#'; str+='\n';
   int len = str.length();
   int cur = 0;
@@ -870,10 +1226,31 @@ void nRF_receive(void) {
         radio.read(&RecvPayload,len);
         delay(1);
       }
-    RecvPayload[len] = 0; // null terminate string
+    RecvPayload[len] = 0;
     if (RecvPayload[0] == '$') analyze_flag=1;
-    Serial.write(RecvPayload);
-    RecvPayload[0] = 0;  // Clear the buffers
+    else {
+      ORDER = "";
+      rev_ORDER = "";
+      cur_ord = 1;
+      ord_dis = 0;
+      int i = 0; 
+      while (RecvPayload[i]!=0){
+        if (RecvPayload[i]-48 <= 9 && RecvPayload[i]-48 >= 0)
+          ord_dis = ord_dis*10 + RecvPayload[i] - 48;
+        else
+          ORDER += RecvPayload[i];
+        i++;
+      }
+      for (int i = ORDER.length()-1; i >= 0; i--){
+        if (ORDER[i]=='S') rev_ORDER += 'S';
+        if (ORDER[i]=='L') rev_ORDER += 'R';
+        if (ORDER[i]=='R') rev_ORDER += 'L';
+      }
+      
+    }
+//    Serial.println(ORDER);
+//    Serial.println(ord_dis);
+    RecvPayload[0] = 0; 
   }  
 
 }
