@@ -214,11 +214,16 @@ void returnbase(){
       turnr_flag = 0;
       get_line_ss();
       if (ss_value != "11111"){
-        if (rev_ORDER[cur_rev] == 'L') turn_left();
-        if (rev_ORDER[cur_rev] == 'R') turn_right();
+        if (rev_ORDER[cur_rev] == 'L') {
+          turn_left();
+          delay(600);
+        }
+        if (rev_ORDER[cur_rev] == 'R') {
+          turn_right();
+          delay(600);
+        }
         if (rev_ORDER[cur_rev] == 'S') go_forth();
         cur_rev++;
-        delay(600);
         reset_dis();
         turn_flag = 1;
       } else {
@@ -240,25 +245,30 @@ void returnbase(){
       lt_count = 0;
       if (!turnr_flag) {
         go_forth();
-        delay(400);
+        delay(350);
       } else turnr_flag = 0;
       get_line_ss();
       if (ss_value != "11111"){
-        if (rev_ORDER[cur_rev] == 'L') turn_left();
+        if (rev_ORDER[cur_rev] == 'L'){ 
+          turn_left();
+          delay(600);
+        }
         if (rev_ORDER[cur_rev] == 'S') go_forth();
         cur_rev++;
-        delay(600);
         reset_dis();
         turn_flag=1;
       } else {
-        if (rev_ORDER[cur_rev] == 'L') turn_left();
+        if (rev_ORDER[cur_rev] == 'L') {
+          turn_left();
+          delay(600);
+        }
+        
         if (rev_ORDER[cur_rev] == 'S') go_forth();
         cur_rev++;
-        delay(600);
         reset_dis();
         turn_flag=1;
       }
-    }
+    } 
   }
   else if ((!ss7 && ss1 && !turn_flag) || turnl_flag){
     rt_count++;
@@ -266,11 +276,14 @@ void returnbase(){
       rt_count = 0;
       if (!turnl_flag){
         go_forth();
-        delay(400);
+        delay(350);
       } else turnl_flag = 0;
       get_line_ss();
       if (ss_value != "11111"){
-        if (rev_ORDER[cur_rev] == 'R') turn_right();
+        if (rev_ORDER[cur_rev] == 'R') {
+          turn_right();
+          delay(600);
+        }
         if (rev_ORDER[cur_rev] == 'S') go_forth();
         cur_rev++;
         reset_dis();
@@ -300,7 +313,7 @@ void finish_return(){
   return_flag = 0;
   convertString("*","Returned");
   send_message();
-  delay(1000);
+  turn_flag = 1;
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -379,18 +392,23 @@ void deliver(){
       turnr_flag = 0;
       get_line_ss();
       if (ss_value != "11111"){
-        if (ORDER[cur_ord] == 'L') turn_left();
-        if (ORDER[cur_ord] == 'R') turn_right();
+        if (ORDER[cur_ord] == 'L') {
+          turn_left();
+          delay(400);
+        }
+        if (ORDER[cur_ord] == 'R'){ 
+          turn_right();
+          delay(400);
+        }
         if (ORDER[cur_ord] == 'S') go_forth();
         cur_ord++;
-        delay(600);
         reset_dis();
         turn_flag = 1;
       } else {
         if (ORDER[cur_ord] == 'L') turn_left();
         if (ORDER[cur_ord] == 'R') turn_right();
         cur_ord++;
-        delay(600);
+        delay(400);
         reset_dis();
         turn_flag = 1;
       }
@@ -409,17 +427,21 @@ void deliver(){
       } else turnr_flag = 0;
       get_line_ss();
       if (ss_value != "11111"){
-        if (ORDER[cur_ord] == 'L') turn_left();
+        if (ORDER[cur_ord] == 'L'){ 
+          turn_left();
+          delay(400);
+        }
         if (ORDER[cur_ord] == 'S') go_forth();
         cur_ord++;
-        delay(600);
         reset_dis();
         turn_flag=1;
       } else {
-        if (ORDER[cur_ord] == 'L') turn_left();
+        if (ORDER[cur_ord] == 'L'){ 
+          turn_left();
+          delay(400);
+        }
         if (ORDER[cur_ord] == 'S') go_forth();
         cur_ord++;
-        delay(600);
         reset_dis();
         turn_flag=1;
       }
@@ -435,14 +457,17 @@ void deliver(){
       } else turnl_flag = 0;
       get_line_ss();
       if (ss_value != "11111"){
-        if (ORDER[cur_ord] == 'R') turn_right();
+        if (ORDER[cur_ord] == 'R'){ 
+          turn_right();
+          delay(400);
+        }
         if (ORDER[cur_ord] == 'S') go_forth();
         cur_ord++;
         reset_dis();
       } else {  
         if (ORDER[cur_ord] == 'R') turn_right();
         cur_ord++;
-        delay(600);
+        delay(400);
         reset_dis();
         turn_flag=1;
       }
@@ -459,10 +484,12 @@ void deliver(){
       send_message();
       
       delay(5000);
+      turn_right();
+      delay(600);
       return_flag = 1;
     }
 
-  if (millis() - _millis > 500 ) {
+  if (millis() - _millis > 500 && !return_flag) {
     _millis = millis();
     convertString(ORDER.substring(0,cur_ord)+String(count_dis()),"feedingback");
     send_message();
@@ -477,38 +504,33 @@ void analyze_room(){
     error = 0;
     turn_flag = 0;
     ool_count = 0;
-    //xulynga4();
-    //xulynga3();
+    //if (analyze_flag==2) complete_analyze();
   }
   //////////////////////////////////////////
   else if(ss_value== "11001"){ 
     error = 1;
     turn_flag = 0;
     ool_count = 0;
-    //xulynga4();
-    //xulynga3();
+    //if (analyze_flag==2) complete_analyze();
   }
   else if(ss_value == "10011"){ 
     error = -1;
     turn_flag = 0;
     ool_count = 0;
-    //xulynga4();
-    //xulynga3();
+    //if (analyze_flag==2) complete_analyze();
   }
   ////////////////////////////////////////
   else if(ss_value == "11101" ){
     error = 2;
     turn_flag = 0;
     ool_count = 0;
-    //xulynga4();
-    //xulynga3();
+    //if (analyze_flag==2) complete_analyze();
   }
   else if(ss_value == "10111" ){ 
     error = -2;
     turn_flag = 0;
     ool_count = 0;
-    //xulynga4();
-    //xulynga3();
+    //if (analyze_flag==2) complete_analyze();
   }
   ///////////////////////////////////////////
   else if(ss_value == "11100" && !turn_flag){ 
@@ -528,7 +550,7 @@ void analyze_room(){
   else if(ss_value == "11111" && !turn_flag){
     ool_count++;
     if (ool_count > 220){
-      convertString(WAY + get_dis(),"Duong cut");
+      convertString("dc"+WAY + get_dis(),"Duong cut");
       send_message();
       //WAY.remove(WAY.length()-1,1);
       line_end = 1;
@@ -537,12 +559,9 @@ void analyze_room(){
       cur_itst--;
       ool_count = 0;
       if (cur_itst <0) {
-        convertString("@","loz");
-        send_message();
-        Astop();
-        Bstop();
-        Cstop();
-        analyze_flag = 0;
+        //analyze_flag = 2;
+        //turn_flag = 1;
+        complete_analyze();
       }
     }
   }
@@ -551,7 +570,7 @@ void analyze_room(){
           ss_value == "10000" ){
     go_forth();
     _millis = millis();
-    while (millis() - _millis < 400 ) {
+    while (millis() - _millis < 300 ) {
       get_line_ss();
       if (!ss1) turnr_flag = 1;
       if (!ss7) turnl_flag = 1;
@@ -585,7 +604,7 @@ void analyze_room(){
       lt_count = 0;
       if (!turnr_flag) {
         go_forth();
-        delay(400);
+        delay(300);
         //reset_dis();
       } else turnr_flag = 0;
       get_line_ss();
@@ -610,7 +629,7 @@ void analyze_room(){
       rt_count = 0;
       if (!turnl_flag){
         go_forth();
-        delay(400);
+        delay(300);
       } else turnl_flag = 0;
       get_line_ss();
       if (ss_value != "11111"){
@@ -626,6 +645,16 @@ void analyze_room(){
   }
   
 }
+
+void complete_analyze(){
+  convertString("@","loz");
+  send_message();
+  Astop();
+  Bstop();
+  Cstop();
+  turn_flag = 1;
+  analyze_flag = 0;
+}
 /////////////////////////////////////////////////////////////////////////////////////
 void xulynga4(){
   itst3_flag = 0;
@@ -633,7 +662,7 @@ void xulynga4(){
     itst[cur_itst] = 3;
     turn_flag = 1;
     if (!line_end) {
-          convertString(WAY + get_dis(),"nga 4");
+          convertString("4 " + WAY + get_dis(),"nga 4");
           send_message();
         } else {
           line_end = 0;
@@ -646,7 +675,7 @@ void xulynga4(){
     itst[cur_itst] = 1;
     turn_flag = 1;
     if (!line_end) {
-          convertString(WAY + get_dis(),"nga 4");
+          convertString("4 " + WAY + get_dis(),"nga 4");
           send_message();
         } else {
           line_end = 0;
@@ -660,7 +689,7 @@ void xulynga4(){
     itst[cur_itst] = -1;
     turn_flag = 1;
     if (!line_end) {
-          convertString(WAY + get_dis(),"nga 4");
+          convertString("4 " + WAY + get_dis(),"nga 4");
           send_message();
         } else {
           line_end = 0;
@@ -685,7 +714,7 @@ void xulynga3T(){
       itst[cur_itst] = 12; 
       turn_flag = 1;
       if (!line_end) {
-          convertString(WAY + get_dis(),"nga 3T");
+          convertString("3t" + WAY + get_dis(),"nga 3T");
           send_message();
         } else{
           line_end = 0;
@@ -705,7 +734,7 @@ void xulynga3T(){
       itst[cur_itst] = -31;
       turn_flag = 1;
       if (!line_end) {
-          convertString(WAY + get_dis(),"nga 3T");
+          convertString("3t" + WAY + get_dis(),"nga 3T");
           send_message();
         } else {
           line_end = 0;
@@ -723,7 +752,7 @@ void xulynga3L(){
       itst[cur_itst] = 22; 
       //turn_flag = 1;
       if (!line_end) {
-          convertString(WAY + get_dis(),"nga 3L");
+          convertString("3l" + WAY + get_dis(),"nga 3L");
           send_message();
         } else {
           line_end = 0;
@@ -736,7 +765,7 @@ void xulynga3L(){
       itst[cur_itst] = -11;
       //turn_flag = 1;
       if (!line_end) {
-          convertString(WAY + get_dis(),"nga 3L");
+          convertString("3l" + WAY + get_dis(),"nga 3L");
           send_message();
         } else {
           line_end = 0;
@@ -762,7 +791,7 @@ void xulynga3R(){
       itst[cur_itst] = 31; 
       turn_flag = 1;
       if (!line_end) {
-          convertString(WAY + get_dis(),"nga 3R");
+          convertString("3r" + WAY + get_dis(),"nga 3R");
           send_message();
         } else {
           line_end = 0;
@@ -782,7 +811,7 @@ void xulynga3R(){
       itst[cur_itst] = -21;
       turn_flag = 1; 
       if (!line_end) {
-          convertString(WAY + get_dis(),"nga 3R");
+          convertString("3r" + WAY + get_dis(),"nga 3R");
           send_message();
         } else { 
           line_end = 0;
@@ -799,7 +828,7 @@ void xulynga2L(){
       itst[cur_itst] = -41; 
       turn_flag = 1;
       if (!line_end) {
-          convertString(WAY + get_dis(),"nga 2L");
+          convertString("2l" + WAY + get_dis(),"nga 2L");
           send_message();
         } else {
           line_end = 0;
@@ -823,7 +852,7 @@ void xulynga2R(){
       itst[cur_itst] = -51; 
       turn_flag = 1;
       if (!line_end) {
-          convertString(WAY + get_dis(),"nga 2R");
+          convertString("2r" + WAY + get_dis(),"nga 2R");
           send_message();
         } else {
           line_end = 0;
@@ -1232,6 +1261,7 @@ void nRF_receive(void) {
       ORDER = "";
       rev_ORDER = "";
       cur_ord = 1;
+      cur_rev = 0;
       ord_dis = 0;
       int i = 0; 
       while (RecvPayload[i]!=0){
