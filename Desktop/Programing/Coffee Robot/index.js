@@ -2,7 +2,8 @@
 var express = require('express');
 var app = express();
 var server = app.listen(3000);
-///////////////////////////////////
+var ip = require('ip');
+//////////////////////////////////////////////////////////////////////
 var SerialPort = require('serialport');
 var port = new SerialPort('/dev/ttyS0',9600);
 
@@ -18,11 +19,16 @@ port.on('open', function () {
     //console.log(data.toString());
     if (dt.substr(dt.length-1)!='#') receivedDt += dt;
     else {
-      console.log(receivedDt);
+      console.log(receivedDt.substr(0,2)+receivedDt.substr(2,receivedDt.length));
       if (analyze_flag){ // analyze room
         if (receivedDt != '@'){
-          updateMap(receivedDt,analyze_flag);
-          mapupdate_flag = 1;
+	  var str = receivedDt.substr(2,receivedDt.length);
+	  if (!isNaN(str.substr(str.length-2,str.length))){
+            updateMap(str,analyze_flag);
+	    mapupdate_flag = 1;
+	  }
+	  else
+	    port.write("^");port.write('\n'); //resend
         }
         else {
           console.log("DONE");
@@ -30,13 +36,21 @@ port.on('open', function () {
           analyze_flag = 0;
         }
       } else if (moving_flag==1) {
-        if (receivedDt =='%') {//finish deliver
-          moving_flag = 2;
-        }
-        else{
-          current_pos = receivedDt;
-        }
+          if (receivedDt =='%') {// delivered
+            moving_flag = 2;
+          }
+          else{
+            current_pos = receivedDt;
+          }
+      } else if (moving_flag==3) {
+          if (receivedDt =='*') {//finish deliver
+            moving_flag = 0;
+          }
+          else{
+            current_pos = receivedDt;
+          }
       }
+
       receivedDt = "";
     }
   });
@@ -48,6 +62,9 @@ var order_list_change = 0;
 
 app.use(express.static('RobotCoffe'));
 console.log("Socket server is running");
+port.write(":"+ip.address());port.write('\n');
+
+
 var socket = require('socket.io');
 var io = socket(server);
 
@@ -69,6 +86,10 @@ var map = JSON.parse(data1);
 
 io.sockets.on('connection',function (socket){
   console.log("New client: "+socket.conn.remoteAddress);
+  socket.on('test',function (data) {
+    console.log(data);
+    socket.emit('a','asdsad');
+  });
   socket.on('login',function (data) {
     //console.log(data);
     var logged_in = 0;
@@ -132,17 +153,7 @@ io.sockets.on('connection',function (socket){
   socket.on("send-order",function(order) {
     order_list.push(order);
     order_list_change = 1;
-    moving_flag = 1;
-    port.write(order.pos);port.write('\n');
-    var timer_moving = setInterval(function() {
-      if (moving_flag==1){
-        io.sockets.emit('current-pos',current_pos);
-      }else if (moving_flag == 2) {
-        moving_flag = 0;
-        clearInterval(timer_moving);
-        socket.emit('moving-complete',0);
-      }
-    },500);
+
     //console.log(order_list);
   });
 
@@ -199,9 +210,29 @@ io.sockets.on('connection',function (socket){
     },1000);
   });
 
+  //////////////////////////////////////////////////////////////////////////
+  setInterval(function() {
+    if (order_list.length != 0 && !moving_flag) {
+      var order = order_list[0];
+      
+      moving_flag = 1;
+      port.write(order.pos);port.write('\n');
+      var timer_moving = setInterval(function() {
+        if (moving_flag==1){
+          io.sockets.emit('current-pos',current_pos);
+        }else if (moving_flag == 2) {
+          order_list.shift();
+          moving_flag = 3;
+          clearInterval(timer_moving);
+          socket.emit('moving-complete',0);
+        }
+      },500);
+    }
+  },1000);
+
 });
 
-///////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 function updateMap(pos,room){
   var cur = 0;
   var curPos;
@@ -226,7 +257,7 @@ function updateMap(pos,room){
       if (temp_dis>dis) {
         dis = temp_dis;
         curPos.F = dis;
-        console.log(map);
+        //console.log(map);
         data1 = JSON.stringify(map,null,2);
         fs.writeFile('map.json',data1,function(){});
       }
