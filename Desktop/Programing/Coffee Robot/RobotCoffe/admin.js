@@ -1,7 +1,8 @@
-var url = 'http://localhost:3000';
+//var url = 'http://192.168.1.23:3000';
+var url = window.location.href;
 var socket;
-socket = io.connect(url);
-//var url = window.location.href;
+socket = io.connect(getQueryVariable1());
+
 var Users;
 var Options;
 var users_panel = document.getElementsByName("name")[0];
@@ -306,7 +307,7 @@ function updatePos(pos){
   var strg = dirc[max_length_id];
   var abs_cdir = abs_dir[max_length_id];
   var dis = pos.substr(strg.length,pos.length);
-  stroke(200, 200, 0);
+  stroke(200, 0, 200);
   strokeWeight(10);
   var x,y = 0;
   // if (strg.charAt(strg.length-1)=='S') { x=pos1x[max_length_id]; y=pos1y[max_length_id]-dis;}
@@ -473,4 +474,12 @@ function getQueryVariable(variable)
                if(pair[0] == variable){return pair[1];}
        }
        return(false);
+}
+
+function getQueryVariable1()
+{
+       var query = window.location.search;
+       var vars = query.split("//");
+       return(vars[0]);
+	
 }

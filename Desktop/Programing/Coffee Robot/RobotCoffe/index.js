@@ -1,4 +1,5 @@
-var url = 'http://localhost:3000';
+//var url = 'http://192.168.1.23:3000';
+var url = window.location.href;
 var socket;
 socket = io.connect(url);
 
