@@ -22,7 +22,7 @@
 #define encC2 25
 
 #define Red 12
-#define Green 11
+#define Green 2
 #define Blue 3
 
 #define maxspeed 2300
@@ -83,7 +83,7 @@ int v2 = 2400;
 int itst[30] = {0}; // intersection 1:S 2:R 3:SR -1:b
 int cur_itst = 0;
 int max_itst = 0;
-bool analyze_flag = 0;
+int analyze_flag = 0;
 bool line_end = 0;
 bool return_flag = 0;
 bool stop_flag = 0;
@@ -105,9 +105,11 @@ unsigned long led_millis;
 byte pwm_r,pwm_b,pwm_g;
 bool dir_r,dir_b,dir_g;
 
+bool OBS,CUP;
+
 void setup() {
-//  Wire.begin();
-  
+  Wire.begin(8);
+  Wire.onReceive(I2Cevent); 
   Serial.begin(57600);
   REG_ADC_MR = 0x10380200;                       
   //ADC -> ADC_CHER = 0xff;     
@@ -125,28 +127,45 @@ void loop() {
   //test_encoder();
   //test_speed_tconst();
   //cal_distance();
-  
   //tune_PID();
+  
   nRF_receive();
+  LED_CODE = 0;
   stt = 0;
-  LED_CODE = 0; 
+  
   if (ORDER != ""){
+    while((!CUP || OBS) && !turn_flag){
+      Astop();
+      Bstop();
+      Cstop();
+      LED_CODE = 1;
+      led_control();
+    }
     deliver();
     stt = 2;
     LED_CODE = 2;
   }
   if (return_flag ==1){
+    while( OBS && !turn_flag){
+      Astop();
+      Bstop();
+      Cstop();
+      LED_CODE = 1;
+      led_control();
+    }
     returnbase();
     stt = 1;
-    LED_CODE = 3;
+    LED_CODE = 2;
   }
   if (analyze_flag) {
-    analyze_room();
     stt = 3;
-    LED_CODE = 1;
+    analyze_room();
+    LED_CODE = 3;
   }
   send_check(stt);
   led_control();
+  
+  
   //Serial.println("xx");
 }
 
@@ -357,7 +376,7 @@ void deliver(){
     turn_flag = 0;
     ool_count = 0;
   }
-  ////////////////////////////////////////
+  //////////////////////////////////////////
   else if(ss_value == "11101" ){
     error = 2;
     turn_flag = 0;
@@ -385,17 +404,40 @@ void deliver(){
   ////////////////////////////////////////////////
   else if(ss_value == "11111" && !turn_flag){
     ool_count++;
-    if (ool_count > 220){
+    if (ool_count > 400){
       line_end = 1;
       turn_right();
       turn_flag = 1;
       cur_itst--;
       ool_count = 0;
+      
       if (cur_itst <0) {
         Astop();
         Bstop();
         Cstop();
         analyze_flag = 0;
+      }
+      
+      if (cur_ord == ORDER.length()) {
+        ORDER = "";
+        Astop();
+        Bstop();
+        Cstop();
+        convertString("%");
+        send_message();
+        return_flag = 1;
+
+        while(CUP){
+          nRF_other_order();
+          if (ORDER!="") return_flag = 0;
+        }
+        if (return_flag) {
+          convertString("b");
+          send_message();
+        }
+        turn_right();
+        delay(600);
+        turn_flag = 1;        
       }
     }
   }
@@ -496,7 +538,7 @@ void deliver(){
     }
   }
 
-  if (cur_ord == ORDER.length()) 
+  if (cur_ord == ORDER.length() && !turn_flag ) 
     if (count_dis() > ord_dis){
       ORDER = "";
       Astop();
@@ -504,11 +546,15 @@ void deliver(){
       Cstop();
       convertString("%");
       send_message();
-
-      unsigned long t = millis();
-      while(millis() - t <5000){
+      return_flag = 1;
+      //unsigned long t = millis();
+      while(CUP){
         nRF_other_order();
         if (ORDER!="") return_flag = 0;
+      }
+      if (return_flag) {
+        convertString("b");
+        send_message();
       }
       turn_right();
       delay(600);
@@ -530,33 +576,33 @@ void analyze_room(){
     error = 0;
     turn_flag = 0;
     ool_count = 0;
-    //if (analyze_flag==2) complete_analyze();
+    if (analyze_flag==2) complete_analyze();
   }
   //////////////////////////////////////////
   else if(ss_value== "11001"){ 
     error = 1;
     turn_flag = 0;
     ool_count = 0;
-    //if (analyze_flag==2) complete_analyze();
+    if (analyze_flag==2) complete_analyze();
   }
   else if(ss_value == "10011"){ 
     error = -1;
     turn_flag = 0;
     ool_count = 0;
-    //if (analyze_flag==2) complete_analyze();
+    if (analyze_flag==2) complete_analyze();
   }
   ////////////////////////////////////////
   else if(ss_value == "11101" ){
     error = 2;
     turn_flag = 0;
     ool_count = 0;
-    //if (analyze_flag==2) complete_analyze();
+    if (analyze_flag==2) complete_analyze();
   }
   else if(ss_value == "10111" ){ 
     error = -2;
     turn_flag = 0;
     ool_count = 0;
-    //if (analyze_flag==2) complete_analyze();
+    if (analyze_flag==2) complete_analyze();
   }
   ///////////////////////////////////////////
   else if(ss_value == "11100" && !turn_flag){ 
@@ -590,9 +636,12 @@ void analyze_room(){
       cur_itst--;
       ool_count = 0;
       if (cur_itst <0) {
-        //analyze_flag = 2;
-        //turn_flag = 1;
-        complete_analyze();
+        convertString("@");
+        send_message();
+        //complete_analyze();
+        turn_right();
+        turn_flag = 1;
+        analyze_flag = 2;
       }
     }
   }
@@ -677,13 +726,11 @@ void analyze_room(){
 }
 
 void complete_analyze(){
-  convertString("@");
-  send_message();
   Astop();
   Bstop();
   Cstop();
-  turn_flag = 1;
   analyze_flag = 0;
+  turn_flag = 1;
 }
 /////////////////////////////////////////////////////////////////////////////////////
 void xulynga4(){
@@ -697,8 +744,8 @@ void xulynga4(){
         } else {
           line_end = 0;
           reset_dis();
-          SEND = "4L11";
-          convertString(SEND);
+          //SEND = "4L11";
+          //convertString(SEND);
         }
     WAY += "L";
     cur_itst++;
@@ -713,8 +760,8 @@ void xulynga4(){
         } else {
           line_end = 0;
           reset_dis();
-          SEND = "4S11";
-          convertString(SEND);
+          //SEND = "4S11";
+          //convertString(SEND);
           }
     WAY.remove(WAY.length()-1,1);
     WAY += "S";
@@ -730,8 +777,8 @@ void xulynga4(){
         } else {
           line_end = 0;
           reset_dis();
-          SEND = "4R11";
-          convertString(SEND);
+          //SEND = "4R11";
+          //convertString(SEND);
           }
     WAY.remove(WAY.length()-1,1);
     WAY += "R";
@@ -743,8 +790,8 @@ void xulynga4(){
     turn_flag = 1;
     WAY.remove(WAY.length()-1,1);
     reset_dis();
-    SEND = "4b11";
-    convertString(SEND);
+    //SEND = "4b11";
+    //convertString(SEND);
   }
 }
 
@@ -759,8 +806,8 @@ void xulynga3T(){
         } else{
           line_end = 0;
           reset_dis();
-          SEND = "3L11";
-          convertString(SEND);
+          //SEND = "3L11";
+          //convertString(SEND);
           }
       WAY += "L";
       cur_itst++;
@@ -771,8 +818,8 @@ void xulynga3T(){
       turn_flag = 1;
       WAY.remove(WAY.length()-1,1);
       reset_dis();
-      SEND = "3b11";
-      convertString(SEND);
+      //SEND = "3b11";
+      //convertString(SEND);
     }
     else if (itst[cur_itst] == 31){
       itst[cur_itst] = -31;
@@ -784,8 +831,8 @@ void xulynga3T(){
         } else {
           line_end = 0;
           reset_dis();
-          SEND = "3S11";
-          convertString(SEND);
+          //SEND = "3S11";
+          //convertString(SEND);
           }
       WAY.remove(WAY.length()-1,1);
       WAY += "S";
@@ -804,8 +851,8 @@ void xulynga3L(){
         } else {
           line_end = 0;
           reset_dis();
-          SEND = "3S11";
-          convertString(SEND);
+          //SEND = "3S11";
+          //convertString(SEND);
           }
       WAY += "S";
       cur_itst++;
@@ -820,8 +867,8 @@ void xulynga3L(){
         } else {
           line_end = 0;
           reset_dis();
-          SEND = "3R11";
-          convertString(SEND);
+          //SEND = "3R11";
+          //convertString(SEND);
           };
       WAY.remove(WAY.length()-1,1);
       WAY += "R";
@@ -833,8 +880,8 @@ void xulynga3L(){
       //turn_flag = 1;
       WAY.remove(WAY.length()-1,1);
       reset_dis();
-      SEND = "3b11";
-      convertString(SEND);
+      //SEND = "3b11";
+      //convertString(SEND);
     }
     
 }
@@ -850,8 +897,8 @@ void xulynga3R(){
         } else {
           line_end = 0;
           reset_dis();
-          SEND = "3L11";
-          convertString(SEND);
+          //SEND = "3L11";
+          //convertString(SEND);
         }
       WAY += "L";
       cur_itst++;
@@ -862,8 +909,8 @@ void xulynga3R(){
       turn_flag = 1;
       WAY.remove(WAY.length()-1,1);
       reset_dis();
-      SEND = "3b11";
-      convertString(SEND);
+      //SEND = "3b11";
+      //convertString(SEND);
     }
     else if (itst[cur_itst] == 22){
       itst[cur_itst] = -21;
@@ -875,8 +922,8 @@ void xulynga3R(){
         } else { 
           line_end = 0;
           reset_dis();
-          SEND = "3R11";
-          convertString(SEND);
+          //SEND = "3R11";
+          //convertString(SEND);
         }
       WAY.remove(WAY.length()-1,1);
       WAY += "R";
@@ -895,8 +942,8 @@ void xulynga2L(){
         } else {
           line_end = 0;
           reset_dis();
-          SEND = "2L11";
-          convertString(SEND);
+          //SEND = "2L11";
+          //convertString(SEND);
         }
       WAY += "L";
       cur_itst++;
@@ -907,8 +954,8 @@ void xulynga2L(){
       turn_flag = 1;
       WAY.remove(WAY.length()-1,1);
       reset_dis();
-      SEND = "2b11";
-      convertString(SEND);
+      //SEND = "2b11";
+      //convertString(SEND);
     }
     
 }
@@ -924,8 +971,8 @@ void xulynga2R(){
         } else {
           line_end = 0;
           reset_dis();
-          SEND = "2R11";
-          convertString(SEND);
+          //SEND = "2R11";
+          //convertString(SEND);
         }
       WAY += "R";
       cur_itst++;
@@ -936,8 +983,8 @@ void xulynga2R(){
       turn_flag = 1;
       WAY.remove(WAY.length()-1,1);
       reset_dis();
-      SEND = "2b11";
-      convertString(SEND);
+      //SEND = "2b11";
+      //convertString(SEND);
     }
 }
 ///////////////////////////////////////////////////////////////////
@@ -1034,7 +1081,6 @@ String get_dis(){
   //int dis = double(_totalcountB)/660/2*18.22 + 15;
   totalcountA = 0;
   totalcountB = 0;
-  //Serial.println(dis);
   return String(dis);
 }
 
@@ -1042,7 +1088,7 @@ int count_dis(){
   _totalcountA=totalcountA;
   _totalcountB=totalcountB;
   long totalcount = (_totalcountA+_totalcountB)/2;
-  int dis = double(totalcount)/660/2*18.22 + 15;
+  int dis = double(totalcount)/660/2*18.22 + 7;
 //  int dis = double(_totalcountB)/660/2*18.22 + 15;
   return dis;
 }
@@ -1266,8 +1312,8 @@ void led_control(){
   } else if (LED_CODE == 1){
     if (millis() - led_millis > 100) {
       led_millis = millis();
-      if (!dir_r) pwm_r+=10;
-      else pwm_r-=10;
+      if (!dir_r) pwm_r+=20;
+      else pwm_r-=20;
       
       if (pwm_r > 255) dir_r = 1;
       else if (pwm_r < 0) dir_r = 0;
@@ -1277,8 +1323,8 @@ void led_control(){
   } else if (LED_CODE == 2){
     if (millis() - led_millis > 100) {
       led_millis = millis();
-      if (!dir_b) pwm_b+=10;
-      else pwm_b-=10;
+      if (!dir_b) pwm_b+=20;
+      else pwm_b-=20;
       
       if (pwm_b > 255) dir_b = 1;
       else if (pwm_b < 0) dir_b = 0;
@@ -1288,8 +1334,8 @@ void led_control(){
   } else if (LED_CODE == 3){
     if (millis() - led_millis > 100) {
       led_millis = millis();
-      if (!dir_g) pwm_g+=10;
-      else pwm_g-=10;
+      if (!dir_g) pwm_g+=20;
+      else pwm_g-=20;
       
       if (pwm_g > 255) dir_g = 1;
       else if (pwm_g < 0) dir_g = 0;
@@ -1304,32 +1350,22 @@ void send_check(int st){
     __millis = millis();
     if (st==1){
       convertString("rr");//res ret
-      send_message();
-      //Serial.println("check1");    
+      send_message();   
     } else if (st==2){
       convertString("dd");//res dlvr
       send_message();
-      //Serial.println("check2");
     } else if (st==3){
       convertString("zz"); // res anlz
       send_message();
-      //Serial.println("check3");
     } else if (st==0){
       convertString("kk"); //res stby
       send_message();
-      //Serial.println("check4");
     }
     //Serial.println(st);
   }
   
 }
 
-void send_i2c(String x){
-//  Wire.beginTransmission(4);
-//  for (int i = 0;i < x.length(); i++)
-//    Wire.write(x[i]);      
-//  Wire.endTransmission(); 
-}
 
 void _serialEvent() {
   while (Serial.available() > 0 ) {
@@ -1493,6 +1529,15 @@ void nRF_other_order(void) {
 }
 
 /////////////////////////////////////////////////////////////////////
+void I2Cevent(int num){
+  byte c = Wire.read();
+  //Serial.println(c);
+  if (c==1) OBS = 1;
+  if (c==2) OBS = 0;
+  if (c==4) CUP = 0;
+  if (c==8) CUP = 1;
+}
+
 void send_message(void){
   
   if (stringComplete) { 
