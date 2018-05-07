@@ -1,4 +1,4 @@
-#include <Servo.h> 
+  #include <Servo.h> 
 //#include <MsTimer2.h>
  
 Servo servo1;
@@ -11,9 +11,12 @@ uint32_t value;
 double h = 110 ;
 double L1 = 108;
 //double L2 = 190;
-double L2 = 175;
+double L2 = 200;
 double x,y;
-double z=-20;
+
+double z=-25;
+double zz=h-30;
+
 float theta1,theta2,theta3;
 
 int rev_angle;
@@ -37,8 +40,8 @@ void setup() {
 
   Serial.begin(9600);
 
-  angle11 = 67;
-  angle12 = 105;
+  angle11 =179;
+  angle12 = 1;
   angle13 = 15;
   
   servo1.write(angle11);
@@ -49,19 +52,9 @@ void setup() {
 
 void loop() {
   _send();
-  //move_arm();
   receive_move();
-  //receive();
 }
 
-void move_arm(double x,double y,double z){
-  double yy = sqrt(sq(x)+sq(y));
-//  theta1 = (PI-atan2(yy,(h-z))-acos((sq(L1)-sq(L2)+sq(h-z)+sq(yy))/(2*L1*sqrt(sq(h-z)+sq(yy)))))*180/PI;
-//  theta2 = (PI-acos((sq(L1)+sq(L2)-sq(h-z)-sq(yy))/(2*L1*L2)))*180/PI;
-//  theta3 = atan2(y,x);
-
-  
-}
 
 void receive_move(){
   while (Serial.available()>0) {
@@ -73,27 +66,20 @@ void receive_move(){
       rdString = "";
       x = value / 1000000;
       y = value / 1000 % 1000;
-//      z = value % 1000;
       if (x>300)
         x = 300 - x;
       
-      Serial.print(x);
-      Serial.print("\t");
-      Serial.print(y);
-      Serial.print("\t");
-      Serial.println(z);
       
-      double yy = sqrt(sq(x)+sq(y));
       
-//      theta1 = (PI-atan2(yy,(h-z))-acos((sq(L1)-sq(L2)+sq(h-z)+sq(yy))/(2*L1*sqrt(sq(h-z)+sq(yy)))))*180/PI;
-//      theta2 = (PI-acos((sq(L1)+sq(L2)-sq(h-z)-sq(yy))/(2*L1*L2)))*180/PI;
+//      theta1 = (PI-atan2(sqrt(sq(x)+sq(y)),(zz))-acos((sq(L1)-sq(L2)+sq(zz)+sq(sqrt(sq(x)+sq(y))))/(2*L1*sqrt(sq(zz)+sq(sqrt(sq(x)+sq(y)))))))*180/PI;
+//      theta2 = (PI-acos((sq(L1)+sq(L2)-sq(zz)-sq(sqrt(sq(x)+sq(y))))/(2*L1*L2)))*180/PI;
 //      theta3 = atan2(y,x)*180/PI;
 //      angle21 = -theta1+140;
 //      angle22 = theta2+105;
 //      angle23 = -theta3+180;
 
-//      theta1 = (PI-atan2(yy,(h-z))+acos((sq(L1)-sq(L2)+sq(h-z)+sq(yy))/(2*L1*sqrt(sq(h-z)+sq(yy)))))*180/PI;
-//      theta2 = (PI-acos((sq(L1)+sq(L2)-sq(h-z)-sq(yy))/(2*L1*L2)))*180/PI;
+//      theta1 = (PI-atan2(sqrt(sq(x)+sq(y)),(zz))+acos((sq(L1)-sq(L2)+sq(zz)+sq(sqrt(sq(x)+sq(y))))/(2*L1*sqrt(sq(zz)+sq(sqrt(sq(x)+sq(y)))))))*180/PI;
+//      theta2 = (PI-acos((sq(L1)+sq(L2)-sq(zz)-sq(sqrt(sq(x)+sq(y))))/(2*L1*L2)))*180/PI;
 //      theta3 = atan2(y,x)*180/PI;
 //      angle21 = -theta1+140;
 //      angle22 = -theta2+105;
@@ -119,45 +105,87 @@ void receive_move(){
 //        angle23=-theta3+183;
 //        angle22=theta2+95;
 //       }
-     if(sqrt(sq(x)+sq(y))>266){
-        theta1=asin((sq(x)+sq(y)+sq(z)+sq(L1)-sq(L2))/(2*L1*sqrt(sq(x)+sq(y)+sq(z))))-acos(abs(z)/sqrt((sq(x)+sq(y)+sq(z))));
-        float anpha=atan2((abs(z)-L1*sin(abs(theta1))),(sqrt(sq(x)+sq(y))-L1*cos(abs(theta1))));
-        theta2= (-theta1-anpha)*180/PI;
-        theta3=atan2(y,x)*180/PI;
-        
-        angle21=theta1*180/PI+65;
-        angle23=-theta3+183;
-        angle22=theta2+95;
-       }
-    else
-       theta1=-(asin((sq(x)+sq(y)+sq(z)+sq(L1)-sq(L2))/(2*L1*sqrt(sq(x)+sq(y)+sq(z))))-acos(abs(z)/sqrt((sq(x)+sq(y)+sq(z)))));
-        float anpha=atan2((abs(z)-L1*sin(abs(-theta1))),(sqrt(sq(x)+sq(y))-L1*cos(abs(-theta1))));
-        theta2= (theta1-anpha)*180/PI;
-        theta3=atan2(y,x)*180/PI;
-        
-        angle21=theta1*180/PI+65;
-        angle23=-theta3+183;
-        angle22=-theta2+105;
+//    if(sqrt(sq(x)+sq(y))>296){
+//     theta1=asin((sq(x)+sq(y)+sq(z)+sq(L1)-sq(L2))/(2*L1*sqrt(sq(x)+sq(y)+sq(z))))-acos(abs(z)/sqrt((sq(x)+sq(y)+sq(z))));
+//    float anpha=atan2((abs(z)-L1*sin(abs(theta1))),(sqrt(sq(x)+sq(y))-L1*cos(abs(theta1))));
+//        theta2= (-theta1-anpha)*180/PI;
+//      theta3=atan2(y,x)*180/PI;
+//        
+//       angle21=theta1*180/PI+70;
+//       angle23=-theta3+185;
+//        angle22=theta2+108;
+//       }
+//    else{
+//        theta1=asin(-((sq(x)+sq(y)+sq(z)+sq(L1)-sq(L2))/(2*L1*sqrt(sq(x)+sq(y)+sq(z)))))+acos(abs(z)/sqrt((sq(x)+sq(y)+sq(z))));
+//        float anpha=atan2((-abs(z)+L1*sin(theta1)),(sqrt(sq(x)+sq(y))-L1*cos(theta1)));
+//        theta2= (theta1+anpha)*180/PI;
+//        theta3=atan2(y,x)*180/PI;
+//
+//        angle21=theta1*180/PI+70;
+//        angle23=-theta3+183;
+//        angle22=-theta2+110;
+//  }
+//if(sq(x)+sq(y)>290){
+//      theta1=PI+acos((sq(x)+sq(y)+sq(zz)+sq(L1)-sq(L2))/(2*L1*sqrt(sq(x)+sq(y)+sq(zz))))-atan2(sqrt(sq(x)+sq(y)),zz);
+//      theta2=(PI-acos((-sq(x)-sq(y)-sq(zz)+sq(L1)+sq(L2))/(2*L1*L2)))*180/PI;
+//      theta3=atan2(y,x)*180/PI;    
+//      
+//      angle21=-theta1*180/PI+160;
+//      angle23=-theta3+183;
+//      angle22=theta2+105;}
+//else{
+      theta1 = (PI-atan2(sqrt(sq(x)+sq(y)),(zz))-acos((sq(L1)-sq(L2)+sq(zz)+sq(sqrt(sq(x)+sq(y))))/(2*L1*sqrt(sq(zz)+sq(sqrt(sq(x)+sq(y)))))))*180/PI;
+      theta2 = (PI-acos((sq(L1)+sq(L2)-sq(zz)-sq(sqrt(sq(x)+sq(y))))/(2*L1*L2)))*180/PI;
+      theta3 = atan2(y,x)*180/PI;
+      angle21 = -theta1+160;
+      angle22 = -theta2+115;
+      angle23 = -theta3+183;
+//}
 
-      Serial.print(angle21);
-      Serial.print("\t");
-      Serial.print(angle22);
-      Serial.print("\t");
-      Serial.println(angle23);
+//      Serial.print(angle21);
+//      Serial.print("\t");
+//      Serial.print(angle22);
+//      Serial.print("\t");
+//      Serial.print(angle23);
       
       digitalWrite(2,LOW);
       
       MOVE(servo3,angle13,angle23);
       MOVE(servo4,147,100);
       MOVE2(servo1,angle11,angle21,servo2,angle12,angle22);
-      MOVE(servo4,100,147);
-      MOVE2(servo2,angle22,angle12,servo1,angle21,angle11);
+      MOVE(servo4,100,140);
+               t=0;
+        while(t<step1-1){
+          moveservo(servo2,angle22,angle12);
+          moveservo(servo1,angle21,angle11);
+          delay(5);
+          t++;
+        } 
+  //    MOVE2(servo2,angle22,angle12,servo1,angle21,angle11);
       MOVE(servo3,angle23,angle13);
-      MOVE(servo4,147,100);  
+              t=0;
+        while(t<step1-1){
+          moveservo(servo2,angle12,125);
+          moveservo(servo1,angle11,45);
+          delay(5);
+          t++;
+        } 
+ //     MOVE2(servo1,angle11,angle21,servo2,angle12,angle22);
+      MOVE(servo4,140,100);
+      servo4.write(140);
+      MOVE(servo4,140,100);
+      MOVE2(servo1,45,angle11,servo2,125,angle12);  
       MOVE(servo4,100,147); 
+      digitalWrite(6,LOW);
+      digitalWrite(9,LOW);
+      digitalWrite(10,LOW);
+      digitalWrite(5,LOW);
+      
+      Serial.print('k');
     }
   }
   digitalWrite(2,HIGH);
+  
 }
 
 void MOVE(Servo sv,int a1,int a2){
@@ -165,7 +193,8 @@ void MOVE(Servo sv,int a1,int a2){
   while(t<step1-1){
     moveservo(sv,a1,a2);delay(5);
     t++;
-  }  
+  }
+   delay(5);  
 }
 
 
@@ -196,7 +225,7 @@ void _send(){
   if(digitalRead(12)==LOW){
     while (digitalRead(12)==LOW){};
     Serial.print('f');
-    delay(100);}
+  }
 }
 
 float moveservo(Servo z,int angleHead1,int angleBack1){
