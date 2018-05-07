@@ -26,12 +26,11 @@ socket.on('user-info',function (info) {
 
 socket.on('can-not-verify',function () {
   alert("Can not log in");
-  var uri = url+"/index.html";
+  var uri = getQueryVariable1();
   window.location.href = uri;
 });
 socket.on('send-map',function(_map) {
   map = _map;
-  console.log("A");
   flag_map = 1;
 });
 socket.on('current-pos',function(pos) {
@@ -115,7 +114,7 @@ function updatePos(pos){
   var strg = dirc[max_length_id];
   var abs_cdir = abs_dir[max_length_id];
   var dis = pos.substr(strg.length,pos.length);
-  stroke(200, 0, 200);
+  stroke(255, 255, 255);
   strokeWeight(10);
   var x,y = 0;
   // if (strg.charAt(strg.length-1)=='S') { x=pos1x[max_length_id]; y=pos1y[max_length_id]-dis;}
@@ -238,7 +237,10 @@ function getQueryVariable(variable)
 
 function getQueryVariable1()
 {
-       var query = window.location.search;
-       var vars = query.split("//");
-       return(vars[0]);
+       var query = window.location.href;
+       var http = query.split("//");
+       var vars = http[1].split("//");
+       return("http://"+vars[0]);
+	
 }
+

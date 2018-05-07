@@ -32,8 +32,8 @@ socket.on('user-info',function (info) {
 });
 
 socket.on('can-not-verify',function () {
+  var uri = getQueryVariable1();
   alert("Can not log in");
-  var uri = url+"/index.html";
   window.location.href = uri;
 });
 
@@ -307,7 +307,7 @@ function updatePos(pos){
   var strg = dirc[max_length_id];
   var abs_cdir = abs_dir[max_length_id];
   var dis = pos.substr(strg.length,pos.length);
-  stroke(200, 0, 200);
+  stroke(255, 255, 255);
   strokeWeight(10);
   var x,y = 0;
   // if (strg.charAt(strg.length-1)=='S') { x=pos1x[max_length_id]; y=pos1y[max_length_id]-dis;}
@@ -387,6 +387,7 @@ function redrawmap(){
   pos2y_cp=[];
   dirc_cp=[];
   abs_dir_cp = [];
+  console.log(curmap);
   drawmap(curmap.S,'S',x_start,y_start,0);
   pos1x = pos1x_cp;
   pos1y = pos1y_cp;
@@ -478,8 +479,9 @@ function getQueryVariable(variable)
 
 function getQueryVariable1()
 {
-       var query = window.location.search;
-       var vars = query.split("//");
-       return(vars[0]);
+       var query = window.location.href;
+       var http = query.split("//");
+       var vars = http[1].split("//");
+       return("http://"+vars[0]);
 	
 }
