@@ -7,7 +7,7 @@ import numpy as np
 import serial
 from collections import deque
 
-arduino = serial.Serial("/dev/ttyACM1", 9600)
+arduino = serial.Serial("/dev/ttyACM1", 9600,timeout=0.1)
 camera = PiCamera()
 camera.resolution = (640, 480)
 camera.framerate = 32
@@ -43,7 +43,7 @@ for frame in camera.capture_continuous(raw, format="bgr", use_video_port=True):
         start_flag = 1
     else:
         mask = cv2.absdiff(gray,origin_gray,0)
-        bw = cv2.threshold(mask,40,255,cv2.THRESH_BINARY)[1]
+        bw = cv2.threshold(mask,25,40,cv2.THRESH_BINARY)[1]
         
         cnts = cv2.findContours(bw.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
         center = None
@@ -78,7 +78,8 @@ for frame in camera.capture_continuous(raw, format="bgr", use_video_port=True):
     # show the frame
     cv2.circle(img, (root_x,root_y), 10, (255, 0, 0), -1)
     cv2.circle(img, (length/2-50,width/2), 6, (0, 0, 255), -1)
-    cv2.imshow("Frame", bw)
+    cv2.imshow("Frame", img)
+    cv2.imshow("BW", bw)
     key = cv2.waitKey(1) & 0xFF
  
     # clear the stream in preparation for the next frame
@@ -89,7 +90,7 @@ for frame in camera.capture_continuous(raw, format="bgr", use_video_port=True):
         break
     if key == ord("e"):
         root_flag = 1
-    if key == ord("f"):
+    if arduino.read()=='f':
         print (X,Y)
         arduino.write(str(X).encode('ascii'))
         if Y>100:

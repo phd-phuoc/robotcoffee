@@ -5,30 +5,34 @@ var server = app.listen(3000);
 var ip = require('ip');
 //////////////////////////////////////////////////////////////////////
 var SerialPort = require('serialport');
+//var port = new SerialPort('/dev/ttyUSB0',9600);
 var port = new SerialPort('/dev/ttyS0',9600);
 
 var analyze_flag = 0;
 var mapupdate_flag = 0;
-var moving_flag = 0;
+var moving_flag = 0;//0:stdby 1:delivering 2:delivered 3:
 var current_pos = "";
+
+var stt_check=0;
+var cup_flag = 0;
 
 var receivedDt = "";
 port.on('open', function () {
   port.on('data',function (data) {
     var dt = data.toString();
-    //console.log(data.toString());
+    
     if (dt.substr(dt.length-1)!='#') receivedDt += dt;
     else {
-      console.log(receivedDt.substr(0,2)+receivedDt.substr(2,receivedDt.length));
+      console.log("RC: "+receivedDt);
       if (analyze_flag){ // analyze room
         if (receivedDt != '@'){
-	  var str = receivedDt.substr(2,receivedDt.length);
-	  if (!isNaN(str.substr(str.length-2,str.length))){
-            updateMap(str,analyze_flag);
-	    mapupdate_flag = 1;
-	  }
-	  else
-	    port.write("^");port.write('\n'); //resend
+		  var str = receivedDt.substr(2,receivedDt.length);
+		  if (!isNaN(str.substr(str.length-2,str.length))){
+			updateMap(str,analyze_flag);
+			mapupdate_flag = 1;
+		  }
+		  else
+			{port.write("^");port.write('\n');} //resend
         }
         else {
           console.log("DONE");
@@ -49,8 +53,24 @@ port.on('open', function () {
           else{
             current_pos = receivedDt;
           }
-      }
-
+      } 
+      
+      if (receivedDt =='kk'){
+		  port.write(":s");port.write('\n'); //print standby
+		  stt_check = 0;
+	  } else if (receivedDt =='dd'){
+		  port.write(":d");port.write('\n'); //print delivering
+		  stt_check = 0;
+	  } else if (receivedDt =='rr'){
+		  port.write(":r");port.write('\n'); //print returning
+		  stt_check = 0;
+	  } else if (receivedDt =='zz'){
+		  port.write(":z");port.write('\n'); //print analizing
+		  stt_check = 0;
+	  } else if (receivedDt =='Robot is ready'){
+		  moving_flag = 0;
+	  }
+		
       receivedDt = "";
     }
   });
@@ -62,6 +82,7 @@ var order_list_change = 0;
 
 app.use(express.static('RobotCoffe'));
 console.log("Socket server is running");
+
 port.write(":"+ip.address());port.write('\n');
 
 
@@ -73,6 +94,7 @@ var data = fs.readFileSync('users.json');
 var users = JSON.parse(data);
 var data1 = fs.readFileSync('map.json');
 var map = JSON.parse(data1);
+
 //console.log(users);
 
 // words.insert = 2;
@@ -209,28 +231,90 @@ io.sockets.on('connection',function (socket){
       }
     },1000);
   });
+  
+  
+  socket.on('cup-ok',function() {
+	  //cup_flag = 1;
+	  console.log("cup ok");
+  });
+  
+});
 
-  //////////////////////////////////////////////////////////////////////////
-  setInterval(function() {
-    if (order_list.length != 0 && !moving_flag) {
-      var order = order_list[0];
+////////////////////////////////////////////////////////////////////////////
+var order = [];
+setInterval(function() {
+	
+    if (order_list.length != 0 && moving_flag==0 ) {
+	  for (var i = 0;i < order_list.length; i++)
+		order[i] = order_list[i];
+      io.sockets.emit('move-arm',3);
+      console.log("Send order");
+      moving_flag = 1;    
       
-      moving_flag = 1;
-      port.write(order.pos);port.write('\n');
-      var timer_moving = setInterval(function() {
+    }
+    
+    if (cup_flag==1) {
+		cup_flag = 0;
+		console.log(order.pos);
+		port.write(order.pos);
+		port.write('\n');
+		
+		var timer_moving = setInterval(function() {
         if (moving_flag==1){
           io.sockets.emit('current-pos',current_pos);
         }else if (moving_flag == 2) {
           order_list.shift();
           moving_flag = 3;
           clearInterval(timer_moving);
-          socket.emit('moving-complete',0);
+          io.sockets.emit('moving-complete',0);
         }
       },500);
-    }
-  },1000);
+	}
+},1000);
 
-});
+/////////////////////////////////////////////////////////////////////////////////
+/*
+var order;
+setInterval(function() {
+	
+    if (order_list.length != 0 && moving_flag==0 ) {
+      order = order_list[0];
+      io.sockets.emit('move-arm',0);
+      console.log("Send order");
+      moving_flag = 1;    
+      
+    }
+    
+    if (cup_flag==1) {
+		cup_flag = 0;
+		console.log(order.pos);
+		port.write(order.pos);
+		port.write('\n');
+		
+		var timer_moving = setInterval(function() {
+        if (moving_flag==1){
+          io.sockets.emit('current-pos',current_pos);
+        }else if (moving_flag == 2) {
+          order_list.shift();
+          moving_flag = 3;
+          clearInterval(timer_moving);
+          io.sockets.emit('moving-complete',0);
+        }
+      },500);
+	}
+},1000);
+*/
+
+setInterval(function() {
+	if (stt_check){
+		port.write(":o");
+		port.write('\n');
+	} // print offline
+	stt_check = 1;
+ 	
+},5000);
+
+
 
 ////////////////////////////////////////////////////////////////////////////
 function updateMap(pos,room){
