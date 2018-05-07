@@ -21,6 +21,7 @@ char serialBuffer[31] = "";
 
 String IP;
 bool writeLCD = false;
+int stt,stt_t; //0:off 1:standby 2:working
 
 void setup(void) {
 
@@ -47,7 +48,7 @@ void setup(void) {
   
   radio.startListening();
   //radio.printDetails();
-
+  
   //Serial.println();
   delay(500);
 }
@@ -56,42 +57,32 @@ void loop(void) {
   
   nRF_receive();
   serial_receive();
-  
 }
 
 void serialEvent() {
   while (Serial.available() > 0 ) {
     char incomingByte = Serial.read();
-    if (incomingByte ==':') writeLCD = true;
-    if (!writeLCD) {
-      if (stringOverflow) {
-         serialBuffer[dataBufferIndex++] = charOverflow;  // Place saved overflow byte into buffer
-         serialBuffer[dataBufferIndex++] = incomingByte;  // saved next byte into next buffer
-         stringOverflow = false;                          // turn overflow flag off
-      } else if (dataBufferIndex > 31) {
-         stringComplete = true;        // Send this buffer out to radio
-         stringOverflow = true;        // trigger the overflow flag
-         charOverflow = incomingByte;  // Saved the overflow byte for next loop
-         dataBufferIndex = 0;          // reset the bufferindex
-         break; 
-      } 
-      else if(incomingByte=='\n'){
-          serialBuffer[dataBufferIndex] = 0; 
-          stringComplete = true;
-      } else {
-          serialBuffer[dataBufferIndex++] = incomingByte;
-          serialBuffer[dataBufferIndex] = 0; 
-      } 
+    if (stringOverflow) {
+       serialBuffer[dataBufferIndex++] = charOverflow;  // Place saved overflow byte into buffer
+       serialBuffer[dataBufferIndex++] = incomingByte;  // saved next byte into next buffer
+       stringOverflow = false;                          // turn overflow flag off
+    } else if (dataBufferIndex > 31) {
+       stringComplete = true;        // Send this buffer out to radio
+       stringOverflow = true;        // trigger the overflow flag
+       charOverflow = incomingByte;  // Saved the overflow byte for next loop
+       dataBufferIndex = 0;          // reset the bufferindex
+       break; 
+    } 
+    else if(incomingByte=='\n'){
+        serialBuffer[dataBufferIndex] = 0; 
+        stringComplete = true;
     } else {
-      if (incomingByte=='\n'){
-        writeLCD = false;
-        LCDprint();
-      }
-      else  
-        IP += incomingByte;        
-    }
-  } // end while()
-} // end serialEvent()
+        serialBuffer[dataBufferIndex++] = incomingByte;
+        serialBuffer[dataBufferIndex] = 0; 
+    } 
+
+  }
+}
 
 void nRF_receive(void) {
   int len = 0;
@@ -115,18 +106,35 @@ void serial_receive(void){
   
   if (stringComplete) { 
         strcat(SendPayload,serialBuffer);      
-        // swap TX & Rx addr for writing
-        radio.openWritingPipe(pipes[1]);
-        radio.openReadingPipe(0,pipes[0]);  
-        radio.stopListening();
-        bool ok = radio.write(&SendPayload,strlen(SendPayload));
-        
-        Serial.write(SendPayload);          
+        if (SendPayload[0] ==':'){
+          if (SendPayload[1] =='o') stt_t = 0;
+          else if (SendPayload[1] =='s') stt_t = 1;
+          else if (SendPayload[1] =='d') stt_t = 2;
+          else if (SendPayload[1] =='z') stt_t = 3;
+          else if (SendPayload[1] =='r') stt_t = 4;
+          else {
+            IP = "";
+            for (int i = 1; i<strlen(SendPayload);i++)
+              IP += SendPayload[i];
+            LCDprint();
+          }
+          if (stt != stt_t){
+            stt = stt_t;
+            LCDprint();
+          }
+        } else {
+          radio.openWritingPipe(pipes[1]);
+          radio.openReadingPipe(0,pipes[0]);  
+          radio.stopListening();
+          bool ok = radio.write(&SendPayload,strlen(SendPayload));
+          
+          //Serial.write(SendPayload);                
+       
+          radio.openWritingPipe(pipes[0]);
+          radio.openReadingPipe(1,pipes[1]); 
+          radio.startListening();
+        }
         stringComplete = false;
-     
-        radio.openWritingPipe(pipes[0]);
-        radio.openReadingPipe(1,pipes[1]); 
-        radio.startListening();  
         SendPayload[0] = 0;
         dataBufferIndex = 0;
         delay(1);
@@ -134,10 +142,18 @@ void serial_receive(void){
 }
 
 void LCDprint(){
+  lcd.clearDisplay();
   lcd.setCursor(20,0);
   lcd.setTextColor(black,white);
-  lcd.print("IP");
+  lcd.print("IP:");
   lcd.print(IP);
   lcd.drawLine(0,10,128,10,black);
+  lcd.setCursor(0,20);
+  lcd.print("Status: ");
+  if (stt==0) lcd.print("Offline"); 
+  if (stt==1) lcd.print("Standby");
+  if (stt==2) lcd.print("Delivering");
+  if (stt==3) lcd.print("Analyzing");
+  if (stt==4) lcd.print("Returning");    
   lcd.display();
 }
