@@ -93,6 +93,9 @@ float gain = 0.02;
 String SEND = "";
 String WAY = "S";
 String ORDER = "";
+String ORDER1 = "";
+String ORDER2 = "";
+String last_ORDER = "";
 String rev_ORDER = "";
 int ord_dis = 0;
 int cur_ord = 1;
@@ -419,6 +422,7 @@ void deliver(){
       }
       
       if (cur_ord == ORDER.length()) {
+        ORDER1 = last_ORDER;
         ORDER = "";
         Astop();
         Bstop();
@@ -426,18 +430,24 @@ void deliver(){
         convertString("%");
         send_message();
         return_flag = 1;
-
+        int ret = 1;
         while(CUP){
-          nRF_other_order();
-          if (ORDER!="") return_flag = 0;
+          if (!nRF_other_order()) ret = 0;
+          if (ORDER!="") {
+            return_flag = 0;
+            convertString(ORDER);
+            send_message();
+          }
         }
         if (return_flag) {
           convertString("b");
           send_message();
         }
-        turn_right();
-        delay(600);
-        turn_flag = 1;        
+        if (ret) {
+          turn_right();
+          turn_flag = 1;
+        }
+        delay(600);        
       }
     }
   }
@@ -540,6 +550,7 @@ void deliver(){
 
   if (cur_ord == ORDER.length() && !turn_flag ) 
     if (count_dis() > ord_dis){
+      ORDER1 = last_ORDER;
       ORDER = "";
       Astop();
       Bstop();
@@ -547,17 +558,24 @@ void deliver(){
       convertString("%");
       send_message();
       return_flag = 1;
-      //unsigned long t = millis();
+      bool ret = 1;
       while(CUP){
-        nRF_other_order();
-        if (ORDER!="") return_flag = 0;
+        if (!nRF_other_order()) ret = 0;
+        if (ORDER!="") {
+          return_flag = 0;
+          convertString(ORDER);
+          send_message();
+        }
       }
       if (return_flag) {
         convertString("b");
         send_message();
       }
-      turn_right();
-      delay(600);
+      if (ret) {
+        turn_right();
+        turn_flag = 1;
+      }
+      delay(600);     
       
     }
 
@@ -1462,12 +1480,14 @@ void nRF_receive(void) {
     //Serial.println(ORDER);
 //    Serial.println(ord_dis);
     RecvPayload[0] = 0; 
+    last_ORDER = ORDER;
   }  
 }
 
 //////////////////////////////////////////////////////////////////
-void nRF_other_order(void) {
+bool nRF_other_order(void) {
   int len = 0;
+  bool ret = 1;
   if ( radio.available() ) {
       bool done = false;
       while (  radio.available() ) {
@@ -1476,9 +1496,7 @@ void nRF_other_order(void) {
         delay(1);
       }
     RecvPayload[len] = 0;
-    String ORDER1 = ORDER;
-    String ORDER2 = "";
-    ORDER = "";
+    ORDER2 = "";
     rev_ORDER = "";
     cur_ord = 0;
     cur_rev = 0;
@@ -1491,10 +1509,15 @@ void nRF_other_order(void) {
           ORDER2 += RecvPayload[i];
         i++;
       }
+      
     i = 0;
     while (ORDER1[i] == ORDER2[i]){
       i++;
-    }
+    } 
+    
+    if (i==ORDER1.length()) {ret = 0;i--;}
+    if (i==ORDER2.length()) i--;
+    
     for (int j = ORDER1.length()-1; j > i; j--){
       if (ORDER1[j]=='S') ORDER += 'S';
       if (ORDER1[j]=='L') ORDER += 'R';
@@ -1524,8 +1547,10 @@ void nRF_other_order(void) {
       if (ORDER2[i]=='R') rev_ORDER += 'L';
     }
   RecvPayload[0] = 0; 
+  last_ORDER = ORDER2;
   } else  
     return_flag = 1;
+  return ret;
 }
 
 /////////////////////////////////////////////////////////////////////
