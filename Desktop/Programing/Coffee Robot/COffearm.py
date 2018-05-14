@@ -34,6 +34,8 @@ X = Y = 0
 
 order_num = 0
 send_flag = 0
+cup_num = 0
+cup_num_l = 0
 
 def ts(*agrs):
     print agrs[0]
@@ -44,7 +46,7 @@ def activateArm(*agrs):
     order_num = agrs[0]
     global send_flag
     send_flag = 1
-    print order_num
+    #print order_num
     #print send_flag
     #socketIO.emit('test','abcds')
 
@@ -67,36 +69,45 @@ for frame in camera.capture_continuous(raw, format="bgr", use_video_port=True):
     cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
     center = None
     if len(cnts) > 0:
+        cup_num = 0
+        for c in cnts:
+            ((x, y), radius) = cv2.minEnclosingCircle(c)
+            if radius >20:
+                cup_num = cup_num+1
+        if cup_num != cup_num_l:
+            cup_num_l = cup_num
+            socketIO.emit('cup-count',cup_num)
+            #print cup_num
+            
         c = max(cnts, key=cv2.contourArea)
         ((x, y), radius) = cv2.minEnclosingCircle(c)
         M = cv2.moments(c)
         center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
-        if radius > 10:
+        if radius > 20:
             x = int(x)
             y = int(y)
             cv2.circle(img, (x, y), int(radius), (0, 255, 255), 2)
             cv2.circle(img, center, 5, (0, 255, 0), -1)
-            #if root_flag == 0:
-            #    root_x = x
-            #    root_y = y
-            #    off_x = x - length/2
-            #    off_y = y - width/2
-            #else:
-            xx = (length/2 - x)/1.387
-            yy = (width/2 - y)/1.397
+
+            xx = (length/2 - x)/1.5  #1.387
+            yy = (width/2 - y)/1.41 #1.397
             if xx>=0:
                 X = int(math.sqrt((xx**2)*(372**2)/(-(xx**2)+(372**2))) + 100)
             if yy>=0:
                 Y = int(math.sqrt((yy**2)*(372**2)/(-(yy**2)+(372**2))) + 126)
             if xx<0:
                 X = int(-math.sqrt((xx**2)*(372**2)/(-(xx**2)+(372**2))) + 100)
+                if X <0:
+                    X = int(X / 1.3)
+                    Y = Y + 8
             if yy<0:
                 Y = int(-math.sqrt((yy**2)*(372**2)/(-(yy**2)+(372**2))) + 126)
-    
+    else :
+        socketIO.emit('cup-count',0)
     # show the frame
     cv2.circle(img, (root_x,root_y), 10, (255, 0, 0), -1)
     cv2.circle(img, (length/2,width/2), 6, (0, 0, 255), -1)
-    cv2.imshow("Frame", img)
+   # cv2.imshow("Frame", img)
     key = cv2.waitKey(1) & 0xFF
  
     # clear the stream in preparation for the next frame
@@ -107,15 +118,41 @@ for frame in camera.capture_continuous(raw, format="bgr", use_video_port=True):
         break
     if key == ord("e"):
         root_flag = 1
-    if arduino.read()=='k':
+
+    ard = arduino.read() 
+    if ard=='f' and cup_num!=0:
+       # order_num = 3
+        print (X,Y)
+        if X>0:
+            arduino.write(str(X).encode('ascii'))
+        else:
+            arduino.write(str(300-X).encode('ascii'))
+        if Y>100:
+            arduino.write(str(Y).encode('ascii'))
+        elif Y>10:
+            arduino.write("0".encode('ascii'))
+            arduino.write(str(Y).encode('ascii'))
+        elif Y<10:
+            arduino.write("00".encode('ascii'))
+            arduino.write(str(Y).encode('ascii'))
+        arduino.write("000\n".encode('ascii'))
+        #arduino.write("\n".encode('ascii'))
+    elif ard=='k':
         order_num -= 1
-        if order_num <= 0:
+        if order_num == 0:
             socketIO.emit('cup-ok',0)
+            print "cup ok"
+        elif order_num < 0:
+            order_num = 0
+            print "test ok"
         else:
             send_flag = 1
+    elif ard=='p':
+        print "Pause"
+        socketIO.emit('arm-pause',0)
+        
 
-    #print order_num
-    if send_flag:
+    if send_flag and cup_num!=0:
         send_flag = 0
         print (X,Y)
         print order_num
@@ -133,21 +170,6 @@ for frame in camera.capture_continuous(raw, format="bgr", use_video_port=True):
             arduino.write(str(Y).encode('ascii'))
         arduino.write("000\n".encode('ascii'))
         #arduino.write("\n".encode('ascii'))
-    if arduino.read()=='f':
-        print (X,Y)
-        if X>0:
-            arduino.write(str(X).encode('ascii'))
-        else:
-            arduino.write(str(300-X).encode('ascii'))
-        if Y>100:
-            arduino.write(str(Y).encode('ascii'))
-        elif Y>10:
-            arduino.write("0".encode('ascii'))
-            arduino.write(str(Y).encode('ascii'))
-        elif Y<10:
-            arduino.write("00".encode('ascii'))
-            arduino.write(str(Y).encode('ascii'))
-        arduino.write("000\n".encode('ascii'))
-        #arduino.write("\n".encode('ascii'))
+    
     
         

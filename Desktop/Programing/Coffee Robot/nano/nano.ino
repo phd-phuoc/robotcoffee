@@ -22,6 +22,8 @@ char serialBuffer[31] = "";
 String IP;
 bool writeLCD = false;
 int stt,stt_t; //0:off 1:standby 2:working
+bool stt_a,stt_a_t;
+int cup_count,cup_count_l;
 
 void setup(void) {
 
@@ -109,9 +111,19 @@ void serial_receive(void){
         if (SendPayload[0] ==':'){
           if (SendPayload[1] =='o') stt_t = 0;
           else if (SendPayload[1] =='s') stt_t = 1;
-          else if (SendPayload[1] =='d') stt_t = 2;
+          else if (SendPayload[1] =='w') stt_t = 2;
           else if (SendPayload[1] =='z') stt_t = 3;
           else if (SendPayload[1] =='r') stt_t = 4;
+          else if (SendPayload[1] =='p') stt_a_t = 1;
+          else if (SendPayload[1] =='u') stt_a_t = 0;
+          
+          else if (SendPayload[1] =='a') cup_count = 0;
+          else if (SendPayload[1] =='b') cup_count = 1;
+          else if (SendPayload[1] =='c') cup_count = 2;
+          else if (SendPayload[1] =='d') cup_count = 3;
+          else if (SendPayload[1] =='e') cup_count = 4;
+          else if (SendPayload[1] =='f') cup_count = 5;
+          
           else {
             IP = "";
             for (int i = 1; i<strlen(SendPayload);i++)
@@ -120,6 +132,14 @@ void serial_receive(void){
           }
           if (stt != stt_t){
             stt = stt_t;
+            LCDprint();
+          }
+          if (stt_a != stt_a_t){
+            stt_a = stt_a_t;
+            LCDprint();
+          }
+          if (cup_count != cup_count_l){
+            cup_count_l= cup_count;
             LCDprint();
           }
         } else {
@@ -148,12 +168,23 @@ void LCDprint(){
   lcd.print("IP:");
   lcd.print(IP);
   lcd.drawLine(0,10,128,10,black);
+  
   lcd.setCursor(0,20);
   lcd.print("Status: ");
   if (stt==0) lcd.print("Offline"); 
   if (stt==1) lcd.print("Standby");
   if (stt==2) lcd.print("Delivering");
   if (stt==3) lcd.print("Analyzing");
-  if (stt==4) lcd.print("Returning");    
+  if (stt==4) lcd.print("Returning"); 
+
+  lcd.setCursor(0,35);
+  lcd.print("Arm: ");
+  if (stt_a==0) lcd.print("Available"); 
+  if (stt_a==1) lcd.print("Pausing");
+
+  lcd.setCursor(0,50);
+  lcd.print("Cup Qtt: ");
+  lcd.print(cup_count); 
+  
   lcd.display();
 }

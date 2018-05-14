@@ -22,8 +22,6 @@ double zz=h-30;
 
 float theta1,theta2,theta3;
 
-int last_pos;
-
 int rev_angle;
 
 int angle11,angle12,angle13;
@@ -52,7 +50,7 @@ void setup() {
   Serial.begin(9600);
 
   angle11 =179;
-  angle12 = 149;
+  angle12 = 31;
   angle13 = 15;
   
   servo1.write(angle11);
@@ -85,21 +83,21 @@ void receive_move(){
       theta3 = atan2(y,x)*180/PI;
    if(sqrt(sq(x)+sq(y))<=290){
       if(x>200){
-            angle21 = -theta1+158;
-            angle22 = theta2+28;
-            angle23 = -theta3+180;
-      } else if(0<x<100) {
-            angle21 = -theta1+158;
-            angle22 = theta2+28;
+            angle21 = -theta1+160;
+            angle22 = -theta2+142;
+            angle23 = -theta3+181;
+      } else if(0<x<20) {
+            angle21 = -theta1+160;
+            angle22 = -theta2+143;
             angle23 = -theta3+184;
       } else if(x<0) {
-            angle21 = -theta1+158;
-            angle22 = theta2+19;
-            angle23 = -theta3+184;
+            angle21 = -theta1+160;
+            angle22 = -theta2+151;
+            angle23 = -theta3+183;
       } else {
-            angle21 = -theta1+158;
-            angle22 = theta2+19;
-            angle23 = -theta3+180;
+            angle21 = -theta1+160;
+            angle22 = -theta2+144;
+            angle23 = -theta3+183;
       }
    }
    else    Serial.print('l');
@@ -121,9 +119,9 @@ void receive_move(){
 
 void dichuyen(){
     MOVE(servo3,angle13,angle23);
-    MOVE(servo4,147,80);
+    MOVE(servo4,147,90);
     MOVE2(servo1,angle11,angle21,servo2,angle12,angle22);
-    MOVE(servo4,80,130);
+    MOVE(servo4,90,130);
     t=0;
     while(t<step1-1){
       moveservo(servo2,angle22,angle12);
@@ -133,32 +131,22 @@ void dichuyen(){
     } 
 //  MOVE2(servo2,angle22,angle12,servo1,angle21,angle11);
     if (digitalRead(cup)==HIGH) RESET = 1; 
-    int cur_pos_sv3;
+    MOVE(servo3,angle23,angle13);
     if (!RESET){
-      cur_pos_sv3 = angle13 + 13*last_pos;
-      MOVE(servo3,angle23,cur_pos_sv3);
-      last_pos++;
-      if (last_pos == 3) last_pos = 0;
-      
       t=0;
       while(t<step1-1){
-        moveservo(servo2,angle12,15);
-        moveservo(servo1,angle11,55);
+        moveservo(servo2,angle12,155);
+        moveservo(servo1,angle11,45);
         delay(3);
         t++;
       } 
   //   MOVE2(servo1,angle11,angle21,servo2,angle12,angle22);
-      MOVE(servo4,130,80);
-      servo4.write(110);
-      MOVE(servo4,110,80);
-      MOVE2(servo1,55,angle11,servo2,15,angle12);  
-      MOVE(servo4,80,147);
-      MOVE(servo3,cur_pos_sv3,angle13); 
-   } else {
-    MOVE(servo3,angle23,angle13);
-   }
-    
-    
+      MOVE(servo4,130,90);
+      servo4.write(130);
+      MOVE(servo4,130,90);
+      MOVE2(servo1,45,angle11,servo2,155,angle12);  
+      MOVE(servo4,90,147); 
+    }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

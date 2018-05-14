@@ -15,6 +15,7 @@ var current_pos = "";
 
 var stt_check=0;
 var cup_flag = 0;
+var arm_pause_flag = 0;
 
 var receivedDt = "";
 port.on('open', function () {
@@ -59,7 +60,7 @@ port.on('open', function () {
 		  port.write(":s");port.write('\n'); //print standby
 		  stt_check = 0;
 	  } else if (receivedDt =='dd'){
-		  port.write(":d");port.write('\n'); //print delivering
+		  port.write(":w");port.write('\n'); //print delivering
 		  stt_check = 0;
 	  } else if (receivedDt =='rr'){
 		  port.write(":r");port.write('\n'); //print returning
@@ -234,41 +235,80 @@ io.sockets.on('connection',function (socket){
   
   
   socket.on('cup-ok',function() {
-	  //cup_flag = 1;
+	  cup_flag = 1;
 	  console.log("cup ok");
+  });
+  
+  socket.on('cup-count',function(cnt) {
+	  if (cnt==0) port.write(":a");
+	  else if (cnt==1) port.write(":b");
+	  else if (cnt==2) port.write(":c");
+	  else if (cnt==3) port.write(":d");
+	  else if (cnt==4) port.write(":e");
+	  else if (cnt==5) port.write(":f");
+	  port.write('\n');
+  });
+  
+  socket.on('arm-pause',function() {
+	  if (!arm_pause_flag){
+		arm_pause_flag = 1;
+        port.write(":p");
+	    port.write('\n');
+	    console.log("arm-pause");
+	  } else {
+		arm_pause_flag = 0;
+        port.write(":u");
+	    port.write('\n');
+	    console.log("arm-u-pause");
+	  }
   });
   
 });
 
 ////////////////////////////////////////////////////////////////////////////
 var order = [];
+var sending_flag = 0;
 setInterval(function() {
 	
-    if (order_list.length != 0 && moving_flag==0 ) {
+    if (order_list.length != 0 && moving_flag==0 && !arm_pause_flag && !sending_flag) {
 	  for (var i = 0;i < order_list.length; i++)
 		order[i] = order_list[i];
-      io.sockets.emit('move-arm',3);
+      io.sockets.emit('move-arm',order.length);
       console.log("Send order");
       moving_flag = 1;    
-      
+      sending_flag = 1;
     }
     
-    if (cup_flag==1) {
+    if (cup_flag==1 && sending_flag) {
+		sending_flag = 0;
 		cup_flag = 0;
-		console.log(order.pos);
-		port.write(order.pos);
+		console.log(order[0].pos);
+		port.write(order[0].pos);
 		port.write('\n');
+		order_list.shift();
+		order.shift();
 		
 		var timer_moving = setInterval(function() {
-        if (moving_flag==1){
-          io.sockets.emit('current-pos',current_pos);
-        }else if (moving_flag == 2) {
-          order_list.shift();
-          moving_flag = 3;
-          clearInterval(timer_moving);
-          io.sockets.emit('moving-complete',0);
-        }
-      },500);
+			if (moving_flag==1){
+			  io.sockets.emit('current-pos',current_pos);
+			}else if (moving_flag == 2) {
+			  if (order.length){
+				console.log(order[0].pos);
+				port.write(order[0].pos);
+				port.write('\n');
+				console.log("Send order");
+				moving_flag=1;
+				order.shift();
+				order_list.shift();
+			  } else {
+				moving_flag = 3;
+				clearInterval(timer_moving);
+				io.sockets.emit('moving-complete',0);
+			  }
+			  
+			}
+		},500);
+      
 	}
 },1000);
 
