@@ -19,8 +19,9 @@ socket.emit("get-user-by-code",code);
 
 socket.on('user-info',function (info) {
   user = info;
-  alert(info.name);
-  document.getElementById('map-name').innerHTML = "ROOM "+info.room;
+  //alert(info.name);
+  document.getElementById('map-name').innerHTML = "MAP of ROOM "+info.room;
+  document.getElementById('usr-name').innerHTML = "User:  "+info.name;
   socket.emit("req-map",info.room);
 });
 
@@ -38,7 +39,7 @@ socket.on('current-pos',function(pos) {
   flag_redraw = 1;
 });
 socket.on('moving-complete',function() {
-  alert('Robot has arrived.');
+  //alert('Robot has arrived.');
 });
 
 ///////////////////////////////////////////////////
