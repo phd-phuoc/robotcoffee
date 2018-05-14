@@ -2,6 +2,7 @@
 #include <Wire.h>
 
 #define PIN_SERVO 10
+#define horn 8
 
 #define cup_t 7
 #define cup_e 6
@@ -41,6 +42,7 @@ unsigned long _millis;
 void setup() {
   Wire.begin();
   Serial.begin(57600);
+  pinMode(horn,OUTPUT);
   pinMode(cup_t,OUTPUT);
   pinMode(cup_e,INPUT);
   pinMode(t1,OUTPUT);
@@ -70,11 +72,14 @@ void loop(){
    if((x[1] || x[2] || x[3]) == 1){
     if (!stop_signal){
       stop_signal = 1;
+      if (cup_signal)
+        digitalWrite(horn,HIGH);
       send_command(1); //co vc
     }
    }
    else if (stop_signal){
       stop_signal = 0;
+      digitalWrite(horn,LOW);
       send_command(2); // ko co vc
    }
 //   Serial.print(x[0]); Serial.print(" ");

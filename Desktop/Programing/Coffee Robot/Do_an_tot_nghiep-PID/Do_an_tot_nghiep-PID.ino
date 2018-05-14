@@ -149,7 +149,7 @@ void loop() {
     LED_CODE = 2;
   }
   if (return_flag ==1){
-    while( OBS && !turn_flag){
+    while( OBS && !turn_flag && (cur_rev != rev_ORDER.length()-1)){
       Astop();
       Bstop();
       Cstop();
